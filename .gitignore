@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+# Se generan desde el repositorio ghost-client
+resources/ghost-client/*.jar
+# Notas de trabajo locales
+PROGRESO.md
+*.log

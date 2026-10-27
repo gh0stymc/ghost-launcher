@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">
+{ "imports": {
+  "three": "../node_modules/three/build/three.module.js",
+  "three/addons/": "../node_modules/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<script type="module">
+// Escena de la pantalla de carga de ghost client: el fantasma de cubos del logo flotando,
+// con luz morada, partículas y brillo. Se renderiza fotograma a fotograma (window.renderFrame).
+import * as THREE from 'three'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+
+const W = Number(new URLSearchParams(location.search).get('w') || 960)
+const H = Number(new URLSearchParams(location.search).get('h') || 540)
+const LOOP = 4 // segundos: la animación se repite sin cortes
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
+renderer.setPixelRatio(1)
+renderer.setSize(W, H)
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 1.05
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+document.body.appendChild(renderer.domElement)
+
+const scene = new THREE.Scene()
+scene.fog = new THREE.Fog(0x0b0816, 26, 60)
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200)
+camera.position.set(0, 2.2, 34)
+camera.lookAt(0, 0.6, 0)
+
+// Fondo: degradado radial morado oscuro
+const bg = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  depthWrite: false, depthTest: false,
+  uniforms: { aspect: { value: W / H } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.9999, 1.0); }',
+  fragmentShader: `varying vec2 vUv; uniform float aspect;
+    void main(){
+      vec2 p = (vUv - vec2(0.5, 0.56)) * vec2(aspect, 1.0);
+      float d = length(p);
+      vec3 inner = vec3(0.17, 0.09, 0.36);
+      vec3 outer = vec3(0.02, 0.015, 0.05);
+      vec3 c = mix(inner, outer, smoothstep(0.0, 0.85, d));
+      // viñeta y un poco de grano fijo
+      c *= 1.0 - 0.35 * smoothstep(0.55, 1.1, d);
+      gl_FragColor = vec4(c, 1.0);
+    }`
+}))
+bg.renderOrder = -1
+bg.frustumCulled = false
+scene.add(bg)
+
+// ---------- Fantasma de cubos ----------
+const ghost = new THREE.Group()
+scene.add(ghost)
+const S = 0.62 // tamaño de cada cubo
+const white = new THREE.MeshStandardMaterial({ color: 0xf6f3ff, roughness: 0.55, metalness: 0.0 })
+const shade = new THREE.MeshStandardMaterial({ color: 0xd9d2f2, roughness: 0.6 })
+const black = new THREE.MeshStandardMaterial({ color: 0x0b0b10, roughness: 0.35 })
+const pink = new THREE.MeshStandardMaterial({ color: 0xff5d7d, roughness: 0.4, emissive: 0x401020 })
+
+const voxels = []
+// Forma del logo: ancho y redondo arriba, recto a los lados y con la "falda" en zigzag abajo
+for (let y = -8; y <= 9; y++) {
+  for (let x = -10; x <= 10; x++) {
+    for (let z = -6; z <= 6; z++) {
+      const ax = Math.abs(x) / 9.6
+      if (y >= 0 ? ax ** 2.6 + (y / 8.8) ** 2.6 > 1 : ax > 1) continue
+      if ((Math.abs(z) / 5.6) ** 2 + ax ** 6 > 1) continue
+      const tooth = Math.floor((x + 10) / 3) % 2 === 0 ? -7 : -5
+      if (y < tooth) continue
+      voxels.push([x, y, z])
+    }
+  }
+}
+// Solo los cubos de la superficie (los de dentro no se ven)
+const set = new Set(voxels.map(v => v.join(',')))
+const surface = voxels.filter(([x, y, z]) => [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].some(([a,b,c]) => !set.has(`${x+a},${y+b},${z+c}`)))
+const box = new THREE.BoxGeometry(S, S, S)
+const mesh = new THREE.InstancedMesh(box, white, surface.length)
+const m4 = new THREE.Matrix4()
+const col = new THREE.Color()
+surface.forEach(([x, y, z], i) => {
+  m4.makeTranslation(x * S, y * S, z * S)
+  mesh.setMatrixAt(i, m4)
+  // tono un poco distinto por cubo, como en el logo
+  const k = 0.93 + 0.07 * Math.sin(x * 12.9898 + y * 78.233 + z * 37.719)
+  mesh.setColorAt(i, col.setRGB(k, k * 0.985, 1))
+})
+mesh.castShadow = true
+mesh.receiveShadow = true
+ghost.add(mesh)
+
+// Cara: ojos, boca y lengua (en la parte delantera)
+function face (x0, y0, w, h, mat, depth = 0.1) {
+  let z = -99
+  for (const [vx, vy, vz] of surface) {
+    if (vx >= x0 && vx < x0 + w && vy <= y0 && vy > y0 - h && vz > z) z = vz
+  }
+  const g = new THREE.Mesh(new THREE.BoxGeometry(w * S, h * S, depth), mat)
+  g.position.set((x0 + (w - 1) / 2) * S, (y0 - (h - 1) / 2) * S, z * S + S / 2 + depth / 2 - 0.01)
+  ghost.add(g)
+  return g
+}
+face(-6, 3, 2, 2, black)
+face(3, 4, 2, 2, black)
+face(-3, 0, 3, 2, black)
+const tongue = face(-3, -2, 2, 2, pink, 0.3)
+
+ghost.position.y = 2
+ghost.rotation.x = 0.05
+
+// Luces
+scene.add(new THREE.HemisphereLight(0xcdbfff, 0x1a0f33, 0.9))
+const key = new THREE.DirectionalLight(0xffffff, 2.2)
+key.position.set(-10, 14, 18)
+key.castShadow = true
+key.shadow.mapSize.set(1024, 1024)
+scene.add(key)
+const rim = new THREE.DirectionalLight(0x8b5cf6, 5)
+rim.position.set(8, 6, -14)
+scene.add(rim)
+const rim2 = new THREE.DirectionalLight(0x6d28d9, 3)
+rim2.position.set(-12, -2, -10)
+scene.add(rim2)
+const under = new THREE.PointLight(0x9f7aea, 28, 30, 1.5)
+under.position.set(0, -6, 6)
+scene.add(under)
+
+// Suelo con brillo y sombra
+const floorMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false,
+  uniforms: { k: { value: 1 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `varying vec2 vUv; uniform float k;
+    void main(){ float d = length(vUv - 0.5) * 2.0;
+      float glow = (1.0 - smoothstep(0.0, 1.0, d)) * 0.55;
+      float shadow = (1.0 - smoothstep(0.0, 0.35 * k, d)) * 0.5;
+      vec3 c = vec3(0.55, 0.36, 1.0) * glow;
+      gl_FragColor = vec4(c * (1.0 - shadow), glow * 0.9); }`
+})
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), floorMat)
+floor.rotation.x = -Math.PI / 2
+floor.position.y = -7.4
+scene.add(floor)
+
+// Partículas: cubitos que suben girando (vuelven a empezar justo al final del bucle)
+const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647 })()
+const particles = []
+const pGeo = new THREE.BoxGeometry(1, 1, 1)
+for (let i = 0; i < 70; i++) {
+  const bright = rnd() < 0.3
+  const mat = new THREE.MeshStandardMaterial({
+    color: bright ? 0xffffff : 0xa78bfa, emissive: bright ? 0xc4b5fd : 0x7c3aed,
+    emissiveIntensity: bright ? 1.6 : 1.1, roughness: 0.4, transparent: true, opacity: 1
+  })
+  const p = new THREE.Mesh(pGeo, mat)
+  const size = 0.12 + rnd() * 0.28
+  p.scale.setScalar(size)
+  scene.add(p)
+  const ang = rnd() * Math.PI * 2
+  const rad = 7 + rnd() * 13
+  particles.push({ p, mat, x: Math.cos(ang) * rad, z: Math.sin(ang) * rad * 0.6 - 3, y0: rnd(), turns: 1 + Math.floor(rnd() * 2), spin: 1 + Math.floor(rnd() * 3), sway: rnd() * Math.PI * 2 })
+}
+
+// Rayos de luz suaves detrás
+const rays = new THREE.Group()
+for (let i = 0; i < 7; i++) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 60), new THREE.MeshBasicMaterial({
+    color: 0x8b5cf6, transparent: true, opacity: 0.05, depthWrite: false, blending: THREE.AdditiveBlending
+  }))
+  m.rotation.z = (i / 7) * Math.PI
+  rays.add(m)
+}
+rays.position.set(0, 2.5, -12)
+scene.add(rays)
+
+const composer = new EffectComposer(renderer)
+composer.setPixelRatio(1)
+composer.setSize(W, H)
+composer.addPass(new RenderPass(scene, camera))
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.55, 0.9))
+composer.addPass(new OutputPass())
+
+window.renderFrame = (t) => {
+  const a = (t / LOOP) * Math.PI * 2
+  ghost.position.y = 2 + Math.sin(a) * 0.7
+  ghost.rotation.y = Math.sin(a) * 0.38
+  ghost.rotation.z = Math.sin(a + Math.PI / 2) * 0.05
+  tongue.scale.z = 1 + 0.6 * Math.max(0, Math.sin(a * 2))
+  floorMat.uniforms.k.value = 1 - Math.sin(a) * 0.25
+  under.intensity = 28 + Math.sin(a) * 8
+  rays.rotation.z = (t / LOOP) * (Math.PI / 7) // los 7 rayos se repiten cada 1/7 de media vuelta: bucle sin saltos
+  for (const q of particles) {
+    const f = (q.y0 + (t / LOOP) * q.turns) % 1
+    q.p.position.set(q.x + Math.sin(a + q.sway) * 0.6, -8 + f * 22, q.z)
+    q.p.rotation.set(a * q.spin, a * q.spin * 0.5, 0)
+    q.mat.opacity = Math.min(1, f * 5, (1 - f) * 4)
+  }
+  composer.render()
+  return true
+}
+window.LOOP = LOOP
+window.ready = true
+</script>
+</body>
+</html>

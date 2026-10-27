@@ -1,0 +1,131 @@
+{
+  "name": "ghost-launcher",
+  "version": "1.0.0",
+  "description": "Ghost Launcher: launcher de Minecraft",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n vite,app \"vite\" \"wait-on tcp:5173 && cross-env ML_DEV=1 electron .\"",
+    "build": "vite build",
+    "start": "vite build && electron .",
+    "dist": "vite build && electron-builder --win",
+    "dist:linux": "vite build && electron-builder --linux"
+  },
+  "keywords": [],
+  "author": {
+    "name": "gh0stymc",
+    "url": "https://github.com/gh0stymc"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "electron-updater": "^6.8.11",
+    "minecraft-launcher-core": "^3.18.2",
+    "msmc": "^5.0.5",
+    "skinview3d": "^3.4.2"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "lucide-react": "^1.61.0",
+    "png-to-ico": "^3.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sharp": "^0.35.5",
+    "vite": "^8.3.5",
+    "wait-on": "^9.5.1"
+  },
+  "build": {
+    "appId": "com.arturo.ghostlauncher",
+    "productName": "Ghost Launcher",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "shortcutName": "Ghost Launcher"
+    },
+    "extraResources": [
+      {
+        "from": "resources/ghost-client",
+        "to": "ghost-client",
+        "filter": [
+          "*.jar"
+        ]
+      },
+      {
+        "from": "resources/ghost-discord-icon.png",
+        "to": "ghost-discord-icon.png"
+      },
+      {
+        "from": "resources/loading-screen",
+        "to": "loading-screen"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz",
+        "pacman"
+      ],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "executableName": "ghost-launcher",
+      "artifactName": "Ghost-Launcher-${version}.${ext}",
+      "synopsis": "Launcher de Minecraft con Ghost Client",
+      "desktop": {
+        "entry": {
+          "Name": "Ghost Launcher",
+          "StartupWMClass": "Ghost Launcher"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "afterPack": "build/afterPack.js",
+    "pacman": {
+      "depends": [
+        "gtk3",
+        "nss",
+        "alsa-lib",
+        "libxss",
+        "libxtst",
+        "libnotify",
+        "libsecret",
+        "xdg-utils",
+        "mesa",
+        "xorg-xrandr"
+      ],
+      "artifactName": "ghost-launcher-${version}-x86_64.pkg.tar.zst"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "gh0stymc",
+        "repo": "ghost-launcher",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "homepage": "https://github.com/gh0stymc/ghost-launcher",
+  "desktopName": "ghost-launcher.desktop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gh0stymc/ghost-launcher.git"
+  }
+}
