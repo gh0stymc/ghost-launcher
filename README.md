@@ -76,8 +76,10 @@ npm run dist       # crea el instalador en release/
 1. Compila ghost client ([repositorio](https://github.com/gh0stymc/ghost-client)) y copia los `.jar` de
    `versions/*/build/libs/` a `resources/ghost-client/` (no se guardan en este repositorio).
 2. Sube el número de versión en `package.json`.
-3. `GH_TOKEN=... npx electron-builder --win --publish always` (y `--linux` en Linux). Crea la release en
-   GitHub con el instalador y `latest.yml`; los launchers instalados la descargan solos.
+3. Windows: `npx electron-builder --win --publish never`. Linux (desde Ubuntu): `npx electron-builder --linux`
+   (AppImage, tar.gz, pacman para CachyOS/Arch y deb para Ubuntu).
+4. Crea la release en GitHub con los instaladores, `latest.yml` y `latest-linux.yml` (con los nombres de archivo
+   que aparecen dentro de esos `.yml`). Los launchers instalados la descargan solos.
 
 ## Licencia
 

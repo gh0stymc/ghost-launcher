@@ -82,7 +82,8 @@
       "target": [
         "AppImage",
         "tar.gz",
-        "pacman"
+        "pacman",
+        "deb"
       ],
       "icon": "build/icon.png",
       "category": "Game",
@@ -95,7 +96,9 @@
           "StartupWMClass": "Ghost Launcher"
         }
       },
-      "syncDesktopName": true
+      "syncDesktopName": true,
+      "maintainer": "gh0stymc <183729705+gh0stymc@users.noreply.github.com>",
+      "vendor": "gh0stymc"
     },
     "afterPack": "build/afterPack.js",
     "pacman": {
@@ -120,7 +123,10 @@
         "repo": "ghost-launcher",
         "releaseType": "release"
       }
-    ]
+    ],
+    "deb": {
+      "artifactName": "ghost-launcher_${version}_amd64.deb"
+    }
   },
   "homepage": "https://github.com/gh0stymc/ghost-launcher",
   "desktopName": "ghost-launcher.desktop",
