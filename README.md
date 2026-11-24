@@ -1,60 +1,62 @@
 # Ghost Launcher
 
-Yoow, ¿qué pasa? Estaba un poco aburrido del Lunar y del Modrinth, así que me hice mi propio launcher: con mi
-estilo y juntando lo que más me gustaba de los dos. Lo uso yo a diario, así que lo que no me convence, lo cambio.
+**English** · [Español](README.es.md)
 
-**Ghost Launcher** es un launcher de Minecraft **gratis** con su propio cliente PvP,
-[ghost client](https://github.com/gh0stymc/ghost-client). La idea es sencilla: lo bueno de un launcher tipo Lunar,
-pero libre, en español y con su propia cara.
+Yoo, what's up? I got a bit bored of Lunar and Modrinth, so I built my own launcher: my style, taking the best of
+both. I use it every day, so whatever I don't like, I just change it.
 
-### ⬇️ [Descargar la última versión (Windows)](https://github.com/gh0stymc/ghost-launcher/releases/latest)
+**Ghost Launcher** is a **free** Minecraft launcher with its own PvP client,
+[ghost client](https://github.com/gh0stymc/ghost-client). The idea is simple: the good parts of a Lunar-style
+launcher, but free and with its own face.
 
-Instálalo una vez y a partir de ahí **se actualiza solo** en segundo plano; no tienes que volver a bajar nada.
+### ⬇️ [Download the latest version (Windows)](https://github.com/gh0stymc/ghost-launcher/releases/latest)
 
-> No es un producto oficial de Minecraft ni está aprobado por Mojang o Microsoft.
-> Necesitas una cuenta de Microsoft que tenga el juego comprado; Minecraft se descarga de los servidores de Mojang.
+Install it once and from then on it **updates itself** in the background; you never have to download it again.
 
-## Lo que puedes hacer
+> Not an official Minecraft product; not approved by or associated with Mojang or Microsoft.
+> You need a Microsoft account that owns the game; Minecraft is downloaded from Mojang's servers.
 
-**Jugar a cualquier versión sin complicarte**
-- Inicia sesión con tu cuenta de Microsoft (puedes tener varias) y juega cualquier versión oficial o snapshot.
-- El Java que haga falta (8, 17, 21, 25…) se descarga **solo**. Tú no instalas nada.
-- Crea los perfiles que quieras, cada uno con su versión, Fabric o Vanilla, su RAM y sus mods.
+## What you can do
 
-**Mods, texturas y shaders en dos clics**
-- Busca e instala lo que quieras de Modrinth (con sus dependencias) o arrastra tus propios `.jar` / `.zip`.
-- Actívalos y desactívalos sin tener que borrarlos.
-- Cada perfil nuevo con Fabric puede traer ya los mods que dan las funciones tipo Lunar (HUD de PvP, zoom, freelook,
-  Sodium/Iris para ir fino, minimapa, capas…), los que tú elijas en Ajustes. Un comprobador se encarga de que las
-  versiones encajen y todo arranque, aunque Modrinth tenga algo mal etiquetado.
+**Play any version without the hassle**
+- Sign in with your Microsoft account (you can have several) and play any official release or snapshot.
+- Whatever Java it needs (8, 17, 21, 25…) is downloaded **automatically**. You install nothing.
+- Make as many profiles as you want, each with its version, Fabric or Vanilla, its RAM and its mods.
 
-**Traer tus modpacks y tus perfiles de Lunar**
-- Importa modpacks de Modrinth, buscándolos o desde un archivo `.mrpack`.
-- Importa tus perfiles de **Lunar Client** tal cual: mods, configuración, texturas, opciones y servidores. Tu Lunar no se toca.
-- ⭐ **Pasa un perfil a otra versión** sin rehacerlo: Ghost te busca los mismos mods para la versión nueva y te copia
-  la configuración, las texturas, los shaders y los servidores. Ideal cuando sale una versión nueva.
-- Exporta e importa perfiles para pasarlos a otro PC o compartirlos.
+**Mods, resource packs and shaders in two clicks**
+- Search and install anything from Modrinth (with its dependencies) or drag in your own `.jar` / `.zip`.
+- Toggle them on and off without having to delete them.
+- Every new Fabric profile can come with the mods that give you Lunar-style features (PvP HUD, zoom, freelook,
+  Sodium/Iris for performance, minimap, capes…), the ones you pick in Settings. A checker makes sure the versions
+  fit and everything boots, even if Modrinth has something mislabeled.
 
-**ghost client, el cliente PvP integrado**
-- HUD configurable, zoom, freelook, efectos de sonido al matar y morir, skin animada en el menú y una pantalla de
-  carga propia (una animación 3D, o tu imagen, GIF o vídeo).
+**Bring your modpacks and your Lunar profiles**
+- Import Modrinth modpacks, by searching or from a `.mrpack` file.
+- Import your **Lunar Client** profiles as-is: mods, config, resource packs, options and servers. Your Lunar isn't touched.
+- ⭐ **Move a profile to another version** without rebuilding it: Ghost finds the same mods for the new version and
+  copies your config, resource packs, shaders and servers. Perfect when a new version drops.
+- Export and import profiles to move them to another PC or share them.
 
-**Hacerlo tuyo**
-- ⭐ **Vestidor**: cambia de skin cuando quieras (se aplica a tu cuenta oficial, así se ve en **todos** los servidores),
-  ponte capas y hasta cópiale la skin a cualquier jugador.
-- Cosméticos propios en 3D: mascotas, sombreros, alas y auras, con capas que se desbloquean según tus horas.
-- Estadísticas de tus partidas (kills, muertes, K/D, rachas, horas por servidor) y medallas por horas jugadas.
-- Personaliza el launcher: foto por perfil, color principal, fondo, y escóndelo mientras juegas.
-- Todo en **español o inglés**.
+**ghost client, the built-in PvP client**
+- Configurable HUD, zoom, freelook, sound effects on kills and deaths, animated skin on the menu and its own
+  loading screen (a 3D animation, or your own image, GIF or video).
 
-## Cómo empezar
+**Make it yours**
+- ⭐ **Wardrobe**: change your skin whenever you want (it applies to your official account, so it shows on **every**
+  server), wear capes, and even copy any player's skin.
+- Your own 3D cosmetics: pets, hats, wings and auras, with capes that unlock based on your hours.
+- Match stats (kills, deaths, K/D, streaks, hours per server) and medals for hours played.
+- Customize the launcher: per-profile picture, accent color, background, and hide it while you play.
+- Available in **English or Spanish**.
 
-1. Descarga e instala la última versión con el botón de arriba.
-2. Ábrelo e inicia sesión con tu cuenta de Microsoft.
-3. Crea un perfil, elige la versión y dale a **Jugar**. Del resto (Java, descargas, mods) se encarga Ghost.
+## Getting started
 
-## Licencia
+1. Download and install the latest version with the button above.
+2. Open it and sign in with your Microsoft account.
+3. Create a profile, pick a version and hit **Play**. Ghost takes care of the rest (Java, downloads, mods).
 
-El código del launcher es [MIT](LICENSE). ghost client, que va incluido, es una versión modificada de
-[AxolotlClient](https://codeberg.org/AxolotlClient/AxolotlClient-mod) con licencia LGPL-3.0; su código está en
+## License
+
+The launcher's code is [MIT](LICENSE). ghost client, which is bundled in, is a modified version of
+[AxolotlClient](https://codeberg.org/AxolotlClient/AxolotlClient-mod) under the LGPL-3.0 license; its code lives at
 [gh0stymc/ghost-client](https://github.com/gh0stymc/ghost-client).
