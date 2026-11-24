@@ -8,7 +8,7 @@ hacerlo a mi manera, sin paywalls y en condiciones. Así que en vez de seguir qu
 [ghost client](https://github.com/gh0stymc/ghost-client). La idea es sencilla — lo mejor de un launcher tipo Lunar,
 pero libre, en español y con su propia cara. Lo uso yo a diario, así que lo que no me gusta, lo cambio.
 
-**Descarga:** [última versión para Windows y Linux](https://ghost-server.gh0styclient.workers.dev/descargar).
+**Descarga:** [última versión](https://github.com/gh0stymc/ghost-launcher/releases/latest) (Windows).
 Se actualiza solo en segundo plano.
 
 > No es un producto oficial de Minecraft ni está aprobado por Mojang o Microsoft.
