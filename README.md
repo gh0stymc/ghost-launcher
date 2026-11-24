@@ -1,89 +1,57 @@
 # Ghost Launcher
 
-Yoow que pasa. Estaba un poco aburrido del Lunar y Modrinth y decidí hacer un launcher propio con mi estilo y las cosas que me gustaban de ambos launchers
+Yoow, ¿qué pasa? Estaba un poco aburrido del Lunar y del Modrinth, así que me hice mi propio launcher: con mi
+estilo y juntando lo que más me gustaba de los dos. Lo uso yo a diario, así que lo que no me convence, lo cambio.
 
-**Ghost Launcher** es eso: un launcher de Minecraft gratuito (Electron + React) con su propio cliente PvP,
-[ghost client](https://github.com/gh0stymc/ghost-client). La idea es sencilla — lo mejor de un launcher tipo Lunar,
-pero libre, en español y con su propia cara. Lo uso yo a diario, así que lo que no me gusta, lo cambio.
+**Ghost Launcher** es un launcher de Minecraft **gratis** con su propio cliente PvP,
+[ghost client](https://github.com/gh0stymc/ghost-client). La idea es sencilla: lo bueno de un launcher tipo Lunar,
+pero libre, en español y con su propia cara.
 
-**Descarga:** [última versión](https://github.com/gh0stymc/ghost-launcher/releases/latest) (Windows).
-Se actualiza solo en segundo plano.
+### ⬇️ [Descargar la última versión (Windows)](https://github.com/gh0stymc/ghost-launcher/releases/latest)
+
+Instálalo una vez y a partir de ahí **se actualiza solo** en segundo plano; no tienes que volver a bajar nada.
 
 > No es un producto oficial de Minecraft ni está aprobado por Mojang o Microsoft.
-> Minecraft se descarga de los servidores de Mojang y necesita una cuenta que tenga el juego comprado.
+> Necesitas una cuenta de Microsoft que tenga el juego comprado; Minecraft se descarga de los servidores de Mojang.
 
-## Qué hace
+## Lo que puedes hacer
 
-- **Cuenta Microsoft**: inicio de sesión oficial, varias cuentas, la sesión se guarda cifrada.
-- **Versiones oficiales**: cualquier release o snapshot de Mojang.
-- **Java automático**: descarga la versión de Java que necesita cada versión (8, 17, 21, 25…).
-- **Perfiles**: cada uno con su carpeta, versión, Fabric o Vanilla, RAM, resolución y argumentos de Java.
-- **Mods sin límites**: busca e instala mods, texturas y shaders de Modrinth (con sus dependencias),
-  o arrastra tus propios `.jar`/`.zip`. Puedes activarlos y desactivarlos sin borrarlos.
-- **Mods integrados**: cada perfil nuevo con Fabric trae mods libres de Modrinth que dan las funciones de los
-  mods integrados de Lunar (Ghost Client, nuestro cliente basado en AxolotlClient, para el HUD PvP, zoom y freelook; Sodium/Iris; minimapa; etc.)
-  y el mod **Capes**. Se eligen en Ajustes. Un comprobador lee los requisitos de cada mod y ajusta versiones
-  para que todo arranque, aunque Modrinth tenga versiones mal etiquetadas.
-- **Modpacks**: importa modpacks de Modrinth (buscándolos o desde un archivo .mrpack) y tus perfiles de Lunar Client
-  (mods, configuración, texturas, opciones y servidores; tu Lunar no se toca). Los mods se reconocen solos en Modrinth.
-- **ghost client**: HUD, zoom, freelook, Sound Effects (sonidos al matar y morir), skin animada en el menú
-  y pantalla de carga propia (animación 3D, o tu imagen, GIF o vídeo).
-- **Vestidor**: guarda tus skins y cambia entre ellas; se cambian en tu cuenta oficial, así que se ven en todos
-  los servidores. También capas y copiar la skin de cualquier jugador.
-- **Tiempo de juego y medallas**: horas por perfil y versión, medallas a las 500, 750, 1000, 2500 y 5000 horas.
-- **Actualizaciones automáticas**: se descargan solas en segundo plano desde las Releases de GitHub.
-- **Personalización**: foto por perfil, color principal (el texto se adapta para que siempre se lea), fondo, ocultar el launcher al jugar.
+**Jugar a cualquier versión sin complicarte**
+- Inicia sesión con tu cuenta de Microsoft (puedes tener varias) y juega cualquier versión oficial o snapshot.
+- El Java que haga falta (8, 17, 21, 25…) se descarga **solo**. Tú no instalas nada.
+- Crea los perfiles que quieras, cada uno con su versión, Fabric o Vanilla, su RAM y sus mods.
 
-## Uso
+**Mods, texturas y shaders en dos clics**
+- Busca e instala lo que quieras de Modrinth (con sus dependencias) o arrastra tus propios `.jar` / `.zip`.
+- Actívalos y desactívalos sin tener que borrarlos.
+- Cada perfil nuevo con Fabric puede traer ya los mods que dan las funciones tipo Lunar (HUD de PvP, zoom, freelook,
+  Sodium/Iris para ir fino, minimapa, capas…), los que tú elijas en Ajustes. Un comprobador se encarga de que las
+  versiones encajen y todo arranque, aunque Modrinth tenga algo mal etiquetado.
 
-```bash
-npm start          # compila la interfaz y abre el launcher
-npm run dev        # modo desarrollo con recarga en vivo
-npm run dist       # crea el instalador en release/
-```
+**Traer tus modpacks y tus perfiles de Lunar**
+- Importa modpacks de Modrinth, buscándolos o desde un archivo `.mrpack`.
+- Importa tus perfiles de **Lunar Client** tal cual: mods, configuración, texturas, opciones y servidores. Tu Lunar no se toca.
+- ⭐ **Pasa un perfil a otra versión** sin rehacerlo: Ghost te busca los mismos mods para la versión nueva y te copia
+  la configuración, las texturas, los shaders y los servidores. Ideal cuando sale una versión nueva.
+- Exporta e importa perfiles para pasarlos a otro PC o compartirlos.
 
-## Dónde se guardan los datos
+**ghost client, el cliente PvP integrado**
+- HUD configurable, zoom, freelook, efectos de sonido al matar y morir, skin animada en el menú y una pantalla de
+  carga propia (una animación 3D, o tu imagen, GIF o vídeo).
 
-`%APPDATA%\ghost-launcher`
+**Hacerlo tuyo**
+- ⭐ **Vestidor**: cambia de skin cuando quieras (se aplica a tu cuenta oficial, así se ve en **todos** los servidores),
+  ponte capas y hasta cópiale la skin a cualquier jugador.
+- Cosméticos propios en 3D: mascotas, sombreros, alas y auras, con capas que se desbloquean según tus horas.
+- Estadísticas de tus partidas (kills, muertes, K/D, rachas, horas por servidor) y medallas por horas jugadas.
+- Personaliza el launcher: foto por perfil, color principal, fondo, y escóndelo mientras juegas.
+- Todo en **español o inglés**.
 
-- `minecraft/`: versiones, librerías y assets compartidos
-- `instances/<id>/`: un perfil (mods, mundos, opciones)
-- `java/<versión>/`: Java descargado
-- `launcher.json`: perfiles, ajustes y cuentas
+## Cómo empezar
 
-## Estructura del código
-
-- `electron/`: proceso principal (Node)
-  - `auth.js` inicio de sesión Microsoft
-  - `versions.js` versiones de Mojang y Fabric (con servidores de respaldo)
-  - `java.js` descarga de Java
-  - `modrinth.js` mods, texturas y shaders
-  - `modpacks.js` importar modpacks de Modrinth y Lunar Client
-  - `builtins.js` lista de mods integrados (y Capes)
-  - `resolver.js` comprobador de compatibilidad entre mods
-  - `ghostclient.js` instala ghost client (incluido en `resources/ghost-client/`)
-  - `wardrobe.js` vestidor (API de skins de Mojang)
-  - `loadingscreen.js` pantalla de carga de ghost client
-  - `updater.js` actualizaciones automáticas
-  - `launch.js` lanza el juego
-  - `profiles.js`, `store.js` datos guardados
-- `src/`: interfaz React
-  - `pages/` Inicio, Perfiles, Mods, Consola, Ajustes
-  - `styles.css` todo el diseño (colores en `:root`)
-- `scripts/make-icons.js`: regenera los iconos (`node scripts/make-icons.js brand/logo-original.png`)
-- `scripts/selftest.js`: prueba completa sin interfaz
-- `scripts/test-builtins.js`: instala los mods integrados en una versión y comprueba que el juego arranca
-
-## Publicar una versión
-
-1. Compila ghost client ([repositorio](https://github.com/gh0stymc/ghost-client)) y copia los `.jar` de
-   `versions/*/build/libs/` a `resources/ghost-client/` (no se guardan en este repositorio).
-2. Sube el número de versión en `package.json`.
-3. Windows: `npx electron-builder --win --publish never`. Linux (desde Ubuntu): `npx electron-builder --linux`
-   (AppImage, tar.gz, pacman para CachyOS/Arch y deb para Ubuntu).
-4. Crea la release en GitHub con el instalador, su `.blockmap` y `latest.yml`
-   (`gh release create vX --repo gh0stymc/ghost-launcher ...`). Los launchers instalados la descargan solos.
-   Los binarios viven como *assets* de la release, no en el árbol del repositorio.
+1. Descarga e instala la última versión con el botón de arriba.
+2. Ábrelo e inicia sesión con tu cuenta de Microsoft.
+3. Crea un perfil, elige la versión y dale a **Jugar**. Del resto (Java, descargas, mods) se encarga Ghost.
 
 ## Licencia
 
