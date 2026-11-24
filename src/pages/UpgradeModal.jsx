@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { t } from '../i18n.js'
 import { call, on, formatPlayTime } from '../api.js'
 import { Icon } from '../components/Icon.jsx'
 import { Modal, Field, Toggle, ProgressBar, ProfileBadge, loaderLabel } from '../components/ui.jsx'
@@ -8,10 +9,10 @@ export function ModeSwitch ({ mode, onChange, disabled }) {
   return (
     <div className="segmented mode-switch">
       <button className={mode === 'new' ? 'active' : ''} onClick={() => onChange('new')} disabled={disabled}>
-        <Icon name="plus" size={14} /> Perfil nuevo
+        <Icon name="plus" size={14} /> {t('Perfil nuevo')}
       </button>
       <button className={mode === 'upgrade' ? 'active' : ''} onClick={() => onChange('upgrade')} disabled={disabled}>
-        <Icon name="refresh" size={14} /> Actualizar un perfil
+        <Icon name="refresh" size={14} /> {t('Actualizar un perfil')}
       </button>
     </div>
   )
@@ -69,11 +70,11 @@ export default function UpgradeModal ({ ctx, onClose, onSaved, onModeChange }) {
   }, [sourceId])
 
   const start = async () => {
-    setProgress({ stage: 'Preparando…', current: 0, total: 0 })
+    setProgress({ stage: t('Preparando…'), current: 0, total: 0 })
     try {
       const r = await call('profiles:upgrade', sourceId, { version, name: name.trim(), copySaves })
       setResult(r)
-      notify(`Perfil «${r.profile.name}» creado para ${version}`)
+      notify(t('Perfil «{name}» creado para {version}', { name: r.profile.name, version }))
     } catch (e) {
       notify(e.message, 'error')
     }
@@ -83,36 +84,36 @@ export default function UpgradeModal ({ ctx, onClose, onSaved, onModeChange }) {
   // Resumen al terminar
   if (result) {
     return (
-      <Modal title="Perfil actualizado" onClose={() => onSaved(result.profile)} wide
+      <Modal title={t('Perfil actualizado')} onClose={() => onSaved(result.profile)} wide
         footer={<>
           <div className="spacer" />
-          <button className="btn ghost" onClick={() => onSaved(result.profile)}>Cerrar</button>
-          <button className="btn primary" onClick={() => { onSaved(result.profile); openMods(result.profile.id) }}><Icon name="puzzle" /> Ver mods</button>
+          <button className="btn ghost" onClick={() => onSaved(result.profile)}>{t('Cerrar')}</button>
+          <button className="btn primary" onClick={() => { onSaved(result.profile); openMods(result.profile.id) }}><Icon name="puzzle" /> {t('Ver mods')}</button>
         </>}>
         <div className="upgrade-done">
           <ProfileBadge profile={result.profile} size={64} />
           <div>
             <h3>{result.profile.name}</h3>
-            <p className="muted no-margin">{result.profile.version} · {loaderLabel(result.profile)} · empieza con 0 horas</p>
+            <p className="muted no-margin">{result.profile.version} · {loaderLabel(result.profile)} · {t('empieza con 0 horas')}</p>
           </div>
         </div>
         <div className="upgrade-summary">
-          <div className="upgrade-stat ok"><Icon name="check" /> <strong>{result.updated.length}</strong> mods actualizados a {result.profile.version}</div>
-          <div className="upgrade-stat ok"><Icon name="check" /> Ajustes de Minecraft (teclas, sensibilidad, FOV…) y configuración de los mods</div>
+          <div className="upgrade-stat ok"><Icon name="check" /> <strong>{result.updated.length}</strong> {t('mods actualizados a {version}', { version: result.profile.version })}</div>
+          <div className="upgrade-stat ok"><Icon name="check" /> {t('Ajustes de Minecraft (teclas, sensibilidad, FOV…) y configuración de los mods')}</div>
           {result.missing.length > 0 && (
             <div className="upgrade-stat warn">
-              <Icon name="alert" /> <div><strong>{result.missing.length}</strong> mods todavía no tienen versión para {result.profile.version}:
+              <Icon name="alert" /> <div><strong>{result.missing.length}</strong> {t('mods todavía no tienen versión para {version}:', { version: result.profile.version })}
                 <small className="muted"> {result.missing.join(', ')}</small></div>
             </div>
           )}
           {result.manual.length > 0 && (
             <div className="upgrade-stat warn">
-              <Icon name="alert" /> <div>Añadidos a mano (no se pueden actualizar solos):
+              <Icon name="alert" /> <div>{t('Añadidos a mano (no se pueden actualizar solos):')}
                 <small className="muted"> {result.manual.join(', ')}</small></div>
             </div>
           )}
           {result.adjusted.length > 0 && (
-            <div className="upgrade-stat"><Icon name="refresh" /> {result.adjusted.length} versiones ajustadas para que todo sea compatible</div>
+            <div className="upgrade-stat"><Icon name="refresh" /> {t('{n} versiones ajustadas para que todo sea compatible', { n: result.adjusted.length })}</div>
           )}
         </div>
       </Modal>
@@ -120,41 +121,40 @@ export default function UpgradeModal ({ ctx, onClose, onSaved, onModeChange }) {
   }
 
   return (
-    <Modal title="Nuevo perfil" onClose={() => !progress && onClose()} wide
+    <Modal title={t('Nuevo perfil')} onClose={() => !progress && onClose()} wide
       footer={progress
         ? <div className="footer-progress"><ProgressBar progress={progress} /></div>
         : <>
           <div className="spacer" />
-          <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" onClick={start} disabled={!src || !version}><Icon name="refresh" /> Crear perfil actualizado</button>
+          <button className="btn ghost" onClick={onClose}>{t('Cancelar')}</button>
+          <button className="btn primary" onClick={start} disabled={!src || !version}><Icon name="refresh" /> {t('Crear perfil actualizado')}</button>
         </>}>
       <ModeSwitch mode="upgrade" onChange={onModeChange} disabled={!!progress} />
 
       {candidates.length === 0
-        ? <p className="muted">Todavía no tienes perfiles que actualizar.</p>
+        ? <p className="muted">{t('Todavía no tienes perfiles que actualizar.')}</p>
         : (
           <>
             <p className="muted small-text no-margin">
-              Crea una copia de un perfil para otra versión de Minecraft: los mismos mods (descargados en su versión nueva),
-              tus ajustes del juego y la configuración de los mods. El perfil original no se toca y las horas empiezan de cero.
+              {t('Crea una copia de un perfil para otra versión de Minecraft: los mismos mods (descargados en su versión nueva), tus ajustes del juego y la configuración de los mods. El perfil original no se toca y las horas empiezan de cero.')}
             </p>
 
             <div className="upgrade-flow">
-              <Field label="Perfil a actualizar">
+              <Field label={t('Perfil a actualizar')}>
                 <select value={sourceId} onChange={e => { setSourceId(e.target.value); setNameTouched(false) }} disabled={!!progress}>
                   {candidates.map(p => <option key={p.id} value={p.id}>{p.name} ({p.version} · {loaderLabel(p)})</option>)}
                 </select>
               </Field>
               <div className="upgrade-arrow"><Icon name="back" className="flip" /></div>
-              <Field label="Versión nueva">
+              <Field label={t('Versión nueva')}>
                 <select value={version} onChange={e => setVersion(e.target.value)} disabled={!!progress || !targets.length}>
-                  {!targets.length && <option>Cargando…</option>}
+                  {!targets.length && <option>{t('Cargando…')}</option>}
                   {targets.map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
               </Field>
             </div>
 
-            <Field label="Nombre del perfil nuevo">
+            <Field label={t('Nombre del perfil nuevo')}>
               <input value={name} onChange={e => { setName(e.target.value); setNameTouched(true) }} disabled={!!progress} />
             </Field>
 
@@ -162,17 +162,17 @@ export default function UpgradeModal ({ ctx, onClose, onSaved, onModeChange }) {
               <div className="upgrade-preview">
                 <ProfileBadge profile={src} size={44} />
                 <div>
-                  <strong>Se copiará de «{src.name}»</strong>
+                  <strong>{t('Se copiará de «{name}»', { name: src.name })}</strong>
                   <small className="muted">
-                    {modCount === null ? '…' : `${modCount} mods`} actualizados a {version || '…'} · ajustes del juego y de los mods ·
-                    texturas, shaders y servidores{src.playTime ? ` · sus ${formatPlayTime(src.playTime)} se quedan en el original` : ''}
+                    {t('{mods} actualizados a {version} · ajustes del juego y de los mods · texturas, shaders y servidores', { mods: modCount === null ? '…' : `${modCount} mods`, version: version || '…' })}
+                    {src.playTime ? ' · ' + t('sus {time} se quedan en el original', { time: formatPlayTime(src.playTime) }) : ''}
                   </small>
                 </div>
               </div>
             )}
 
-            <Toggle checked={copySaves} onChange={setCopySaves} label="Copiar también los mundos"
-              hint="Minecraft los actualiza al abrirlos en la versión nueva (los originales siguen en el otro perfil)" />
+            <Toggle checked={copySaves} onChange={setCopySaves} label={t('Copiar también los mundos')}
+              hint={t('Minecraft los actualiza al abrirlos en la versión nueva (los originales siguen en el otro perfil)')} />
           </>
           )}
     </Modal>

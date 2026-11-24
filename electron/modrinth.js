@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const paths = require('./paths')
 const { getJson, download } = require('./http')
+const { t } = require('./i18n')
 
 const API = 'https://api.modrinth.com/v2'
 
@@ -20,10 +21,15 @@ function writeMeta (profileId, meta) {
   fs.writeFileSync(metaFile(profileId), JSON.stringify(meta, null, 2))
 }
 
-async function search ({ query = '', type = 'mod', gameVersion, loader, offset = 0, sort = 'relevance' }) {
+// filters: grupos de categorías de Modrinth; dentro de un grupo basta con una (p. ej. [['16x', '32x'], ['combat']])
+// anyVersion: texture packs y shaders suelen funcionar en versiones que no marcan, así que se pueden ver todos
+async function search ({ query = '', type = 'mod', gameVersion, loader, offset = 0, sort = 'relevance', filters = [], anyVersion = false }) {
   const facets = [[`project_type:${type}`]]
-  if (gameVersion) facets.push([`versions:${gameVersion}`])
+  if (gameVersion && !anyVersion) facets.push([`versions:${gameVersion}`])
   if ((type === 'mod' || type === 'modpack') && loader) facets.push([`categories:${loader}`])
+  // Shaders: solo los que funcionan con Iris (Iris también carga los de OptiFine)
+  if (type === 'shader') facets.push(['categories:iris', 'categories:optifine'])
+  for (const group of filters) if (group.length) facets.push(group.map(c => `categories:${c}`))
   const params = new URLSearchParams({ query, index: sort, offset: String(offset), limit: '20', facets: JSON.stringify(facets) })
   return getJson(`${API}/search?${params}`)
 }
@@ -32,7 +38,14 @@ async function pickVersion (projectId, type, gameVersion, loader) {
   const params = new URLSearchParams({ game_versions: JSON.stringify([gameVersion]) })
   if (type === 'mod' && loader) params.set('loaders', JSON.stringify([loader]))
   const versions = await getJson(`${API}/project/${projectId}/version?${params}`)
-  if (!versions.length) return null
+  if (!versions.length) {
+    // Texture packs y shaders: si no hay una para esta versión, la más reciente (casi siempre funciona)
+    if (type !== 'mod') {
+      const all = await getJson(`${API}/project/${projectId}/version`)
+      return all.find(v => v.version_type === 'release') || all[0] || null
+    }
+    return null
+  }
   // Preferimos versiones estables si las hay
   return versions.find(v => v.version_type === 'release') || versions[0]
 }
@@ -44,7 +57,7 @@ async function install (profile, projectIdOrSlug, type = 'mod', onProgress = () 
   if (seen.has(projectIdOrSlug)) return []
   seen.add(projectIdOrSlug)
   const loader = profile.loader === 'vanilla' ? null : profile.loader
-  if (type === 'mod' && !loader) throw new Error('Los mods necesitan un perfil con Fabric')
+  if (type === 'mod' && !loader) throw new Error(t('Los mods necesitan un perfil con Fabric'))
 
   const project = await getJson(`${API}/project/${projectIdOrSlug}`)
   const projectId = project.id
@@ -55,7 +68,7 @@ async function install (profile, projectIdOrSlug, type = 'mod', onProgress = () 
   if (skipIfInstalled && Object.values(readMeta(profile.id)).some(m => m.projectId === projectId)) return []
 
   const version = await pickVersion(projectId, type, profile.version, loader)
-  if (!version) throw new Error(`${project.title} no tiene versión para ${profile.version}`)
+  if (!version) throw new Error(t('{name} no tiene versión para {version}', { name: project.title, version: profile.version }))
   await placeVersion(profile, project, version, type, onProgress)
   const installed = [project.title]
 
@@ -77,10 +90,10 @@ async function placeVersion (profile, project, version, type, onProgress = () =>
   const file = version.files.find(f => f.primary) || version.files[0]
   const folder = path.join(paths.instance(profile.id), FOLDERS[type])
 
-  onProgress({ stage: `Descargando ${project.title}`, current: 0, total: file.size })
+  onProgress({ stage: t('Descargando {name}', { name: project.title }), current: 0, total: file.size })
   await download(file.url, path.join(folder, file.filename), {
     sha1: file.hashes.sha1,
-    onProgress: (done, total) => onProgress({ stage: `Descargando ${project.title}`, current: done, total: total || file.size })
+    onProgress: (done, total) => onProgress({ stage: t('Descargando {name}', { name: project.title }), current: done, total: total || file.size })
   })
 
   // Si había una copia desactivada con el mismo nombre, sobra

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { t } from '../i18n.js'
 import { call, on } from '../api.js'
 import { Icon } from '../components/Icon.jsx'
 import { Field, RamSlider, Toggle } from '../components/ui.jsx'
@@ -14,6 +15,32 @@ const BACKGROUNDS = [
 // Argumentos de Java recomendados para mejor rendimiento
 const AIKAR = '-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20'
 
+// Idioma: cambia el launcher y, al abrir el juego, Minecraft, ghost client y los mods integrados
+const LANGUAGES = [
+  { id: 'es', name: 'Español', code: 'ES' },
+  { id: 'en', name: 'English', code: 'EN' }
+]
+
+function LanguageCard ({ settings, updateSettings }) {
+  return (
+    <section className="card">
+      <h3 className="card-title"><Icon name="globe" /> {t('Idioma')}</h3>
+      <div className="lang-options" role="radiogroup" aria-label={t('Idioma')}>
+        {LANGUAGES.map(l => (
+          <button key={l.id} role="radio" aria-checked={settings.language === l.id}
+            className={`lang-option ${settings.language === l.id ? 'active' : ''}`}
+            onClick={() => updateSettings({ language: l.id })}>
+            <span className="lang-code">{l.code}</span>
+            <strong>{l.name}</strong>
+            {settings.language === l.id && <Icon name="check" size={16} className="accent-text" />}
+          </button>
+        ))}
+      </div>
+      <small className="field-hint">{t('Cambia el launcher, ghost client y los mods integrados. En el juego se aplica la próxima vez que lo abras.')}</small>
+    </section>
+  )
+}
+
 // Estado de Discord: el ID de la aplicación "ghost client" que crea el usuario en Discord
 function DiscordCard ({ settings, updateSettings }) {
   const [id, setId] = useState(settings.discordAppId || '')
@@ -24,17 +51,15 @@ function DiscordCard ({ settings, updateSettings }) {
     <section className="card">
       <h3 className="card-title"><Icon name="sparkles" /> Discord</h3>
       <p className="muted small-text no-margin">
-        Para que Discord muestre «Jugando a ghost client» con el fantasma, crea una aplicación llamada
-        <strong> ghost client</strong> en el portal de Discord y pega aquí su <strong>Application ID</strong>.
-        Después actívalo dentro del juego en ghost client → Discord RPC.
+        {t('Para que Discord muestre «Jugando a ghost client» con el fantasma, crea una aplicación llamada ghost client en el portal de Discord y pega aquí su Application ID. Después actívalo dentro del juego en ghost client → Discord RPC.')}
       </p>
-      <Field label="ID de la aplicación de Discord" hint={id && !valid ? 'Debe ser un número largo (17–20 cifras)' : settings.discordAppId ? 'Guardado. Se aplica la próxima vez que abras el juego.' : null}>
-        <input value={id} inputMode="numeric" placeholder="Ej.: 1234567890123456789"
+      <Field label={t('ID de la aplicación de Discord')} hint={id && !valid ? t('Debe ser un número largo (17–20 cifras)') : settings.discordAppId ? t('Guardado. Se aplica la próxima vez que abras el juego.') : null}>
+        <input value={id} inputMode="numeric" placeholder={t('Ej.: 1234567890123456789')}
           onChange={e => setId(e.target.value.replace(/\D/g, ''))} onBlur={save} onKeyDown={e => e.key === 'Enter' && save()} />
       </Field>
       <div className="row">
-        <button className="btn small" onClick={() => call('system:openUrl', 'https://discord.com/developers/applications')}>Abrir portal de Discord</button>
-        <button className="btn small ghost" onClick={() => call('system:showDiscordIcon')}>Icono para subir</button>
+        <button className="btn small" onClick={() => call('system:openUrl', 'https://discord.com/developers/applications')}>{t('Abrir portal de Discord')}</button>
+        <button className="btn small ghost" onClick={() => call('system:showDiscordIcon')}>{t('Icono para subir')}</button>
       </div>
     </section>
   )
@@ -61,14 +86,13 @@ function BuiltinsCard ({ updateSettings }) {
 
   return (
     <section className="card wide">
-      <h3 className="card-title"><Icon name="sparkles" /> Mods integrados</h3>
+      <h3 className="card-title"><Icon name="sparkles" /> {t('Mods integrados')}</h3>
       <p className="muted small-text no-margin">
-        Se instalan solos en cada perfil nuevo con Fabric: ghost client (nuestro cliente, con HUD, zoom, freelook y utilidades PvP)
-        y mods libres de Modrinth para el resto. En un perfil ya creado puedes añadirlos desde su página de Mods.
+        {t('Se instalan solos en cada perfil nuevo con Fabric: ghost client (nuestro cliente, con HUD, zoom, freelook y utilidades PvP) y mods libres de Modrinth para el resto. En un perfil ya creado puedes añadirlos desde su página de Mods.')}
       </p>
       <div className="capes-row">
-        <Toggle checked={catalog.capes.enabled} onChange={setCapes} label="Capes en todos los perfiles nuevos"
-          hint="También en los modpacks que importes. Muestra capas de OptiFine, MinecraftCapes, Cosmetica…" />
+        <Toggle checked={catalog.capes.enabled} onChange={setCapes} label={t('Capes en todos los perfiles nuevos')}
+          hint={t('También en los modpacks que importes. Muestra capas de OptiFine, MinecraftCapes, Cosmetica…')} />
       </div>
       <div className="builtin-groups">
         {groups.map(g => {
@@ -78,7 +102,7 @@ function BuiltinsCard ({ updateSettings }) {
             <div key={g} className={`builtin-group ${open === g ? 'open' : ''}`}>
               <button className="builtin-group-head" onClick={() => setOpen(open === g ? null : g)}>
                 <strong>{g}</strong>
-                <span className="muted small-text">{on}/{mods.length} activos</span>
+                <span className="muted small-text">{t('{on}/{total} activos', { on, total: mods.length })}</span>
                 <Icon name="chevron" size={15} />
               </button>
               {open === g && mods.map(m => (
@@ -116,26 +140,25 @@ function UpdatesCard ({ notify }) {
   }, [])
   if (!status) return null
   const text = status.state === 'error'
-    ? `No se pudo comprobar: ${status.error || 'sin conexión'}`
-    : status.state === 'downloading' ? `Descargando la versión ${status.next}… ${status.progress || 0}%`
-      : UPDATE_TEXT[status.state] || ''
+    ? t('No se pudo comprobar: {error}', { error: status.error || t('sin conexión') })
+    : status.state === 'downloading' ? t('Descargando la versión {v}… {p}%', { v: status.next, p: status.progress || 0 })
+      : t(UPDATE_TEXT[status.state] || '')
   return (
     <section className="card">
-      <h3 className="card-title"><Icon name="refresh" /> Actualizaciones</h3>
+      <h3 className="card-title"><Icon name="refresh" /> {t('Actualizaciones')}</h3>
       <p className="muted small-text" style={{ margin: 0 }}>
-        Versión instalada: <strong style={{ color: 'var(--text)' }}>{status.version}</strong>. Ghost Launcher y ghost client
-        se actualizan solos: la nueva versión se descarga en segundo plano.
+        {t('Versión instalada:')} <strong style={{ color: 'var(--text)' }}>{status.version}</strong>. {t('Ghost Launcher y ghost client se actualizan solos: la nueva versión se descarga en segundo plano.')}
       </p>
       <p className={`small-text ${status.state === 'error' ? 'danger-text' : 'muted'}`} style={{ margin: 0 }}>{text}</p>
       <div className="row">
         {status.state === 'ready'
-          ? <button className="btn small primary" onClick={() => call('update:install').catch(e => notify(e.message, 'error'))}>Reiniciar y actualizar</button>
+          ? <button className="btn small primary" onClick={() => call('update:install').catch(e => notify(e.message, 'error'))}>{t('Reiniciar y actualizar')}</button>
           : <button className="btn small" disabled={status.state === 'checking' || status.state === 'downloading'}
-            onClick={() => call('update:check').then(setStatus).catch(e => notify(e.message, 'error'))}>Buscar actualizaciones</button>}
-        <button className="btn small ghost" onClick={() => call('system:openUrl', 'https://github.com/gh0stymc/ghost-launcher')}>Código del launcher</button>
-        <button className="btn small ghost" onClick={() => call('system:openUrl', 'https://github.com/gh0stymc/ghost-client')}>Código de ghost client</button>
+            onClick={() => call('update:check').then(setStatus).catch(e => notify(e.message, 'error'))}>{t('Buscar actualizaciones')}</button>}
+        <button className="btn small ghost" onClick={() => call('system:openUrl', 'https://github.com/gh0stymc/ghost-launcher')}>{t('Código del launcher')}</button>
+        <button className="btn small ghost" onClick={() => call('system:openUrl', 'https://github.com/gh0stymc/ghost-client')}>{t('Código de ghost client')}</button>
       </div>
-      <small className="muted">Launcher con licencia MIT. ghost client es una versión modificada de AxolotlClient (LGPL-3.0).</small>
+      <small className="muted">{t('Launcher con licencia MIT. ghost client es una versión modificada de AxolotlClient (LGPL-3.0).')}</small>
     </section>
   )
 }
@@ -148,74 +171,75 @@ export default function Settings ({ ctx }) {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>Ajustes</h1>
-          <p className="muted">Se aplican a todos los perfiles, salvo que un perfil tenga los suyos.</p>
+          <h1>{t('Ajustes')}</h1>
+          <p className="muted">{t('Se aplican a todos los perfiles, salvo que un perfil tenga los suyos.')}</p>
         </div>
       </div>
 
       <div className="settings-grid">
+        <LanguageCard settings={settings} updateSettings={updateSettings} />
+        <UpdatesCard notify={ctx.notify} />
         <BuiltinsCard updateSettings={updateSettings} />
         <DiscordCard settings={settings} updateSettings={updateSettings} />
-        <UpdatesCard notify={ctx.notify} />
         <LoadingScreenCard settings={settings} updateSettings={updateSettings} notify={ctx.notify} />
 
         <section className="card">
-          <h3 className="card-title"><Icon name="cpu" /> Memoria RAM</h3>
+          <h3 className="card-title"><Icon name="cpu" /> {t('Memoria RAM')}</h3>
           <RamSlider value={settings.maxRam} onChange={v => updateSettings({ maxRam: v })} totalRam={system?.totalRam} />
         </section>
 
         <section className="card">
-          <h3 className="card-title"><Icon name="palette" /> Apariencia</h3>
-          <Field label="Color principal">
+          <h3 className="card-title"><Icon name="palette" /> {t('Apariencia')}</h3>
+          <Field label={t('Color principal')}>
             <div className="colors">
               {ACCENTS.map(c => (
                 <button key={c} className={`color ${settings.accent === c ? 'active' : ''}`} style={{ background: c }} onClick={() => updateSettings({ accent: c })} aria-label={`Color ${c}`} />
               ))}
-              <label className="color custom" title="Color personalizado">
+              <label className="color custom" title={t('Color personalizado')}>
                 <input type="color" value={settings.accent} onChange={e => updateSettings({ accent: e.target.value })} />
                 <Icon name="plus" size={14} />
               </label>
             </div>
           </Field>
-          <Field label="Fondo">
+          <Field label={t('Fondo')}>
             <div className="segmented">
               {BACKGROUNDS.map(b => (
-                <button key={b.id} className={settings.background === b.id ? 'active' : ''} onClick={() => updateSettings({ background: b.id })}>{b.label}</button>
+                <button key={b.id} className={settings.background === b.id ? 'active' : ''} onClick={() => updateSettings({ background: b.id })}>{t(b.label)}</button>
               ))}
             </div>
           </Field>
         </section>
 
         <section className="card">
-          <h3 className="card-title"><Icon name="settings" /> Comportamiento</h3>
+          <h3 className="card-title"><Icon name="settings" /> {t('Comportamiento')}</h3>
           <Toggle checked={settings.closeOnLaunch} onChange={v => updateSettings({ closeOnLaunch: v })}
-            label="Ocultar el launcher al jugar" hint="Vuelve a aparecer cuando cierras el juego" />
+            label={t('Ocultar el launcher al jugar')} hint={t('Vuelve a aparecer cuando cierras el juego')} />
           <Toggle checked={settings.showSnapshots} onChange={v => updateSettings({ showSnapshots: v })}
-            label="Mostrar snapshots por defecto" hint="Versiones de prueba al crear perfiles" />
+            label={t('Mostrar snapshots por defecto')} hint={t('Versiones de prueba al crear perfiles')} />
         </section>
 
         <section className="card">
           <h3 className="card-title"><Icon name="terminal" /> Java</h3>
-          <Field label="Argumentos de Java" hint="Para usuarios avanzados. Java se descarga solo según la versión.">
+          <Field label={t('Argumentos de Java')} hint={t('Para usuarios avanzados. Java se descarga solo según la versión.')}>
             <textarea rows={3} value={jvm} onChange={e => setJvm(e.target.value)} onBlur={() => updateSettings({ jvmArgs: jvm })} placeholder="-XX:+UseG1GC" />
           </Field>
           <div className="row">
-            <button className="btn small ghost" onClick={() => { setJvm(AIKAR); updateSettings({ jvmArgs: AIKAR }) }}>Usar optimizados</button>
-            <button className="btn small ghost" onClick={() => { setJvm(''); updateSettings({ jvmArgs: '' }) }}>Limpiar</button>
+            <button className="btn small ghost" onClick={() => { setJvm(AIKAR); updateSettings({ jvmArgs: AIKAR }) }}>{t('Usar optimizados')}</button>
+            <button className="btn small ghost" onClick={() => { setJvm(''); updateSettings({ jvmArgs: '' }) }}>{t('Limpiar')}</button>
           </div>
           {system?.javas?.length > 0 && (
-            <small className="field-hint">Java instalado: {system.javas.map(j => `Java ${j.major}`).join(', ')}</small>
+            <small className="field-hint">{t('Java instalado:')} {system.javas.map(j => `Java ${j.major}`).join(', ')}</small>
           )}
         </section>
 
         <section className="card">
-          <h3 className="card-title"><Icon name="folder" /> Archivos</h3>
+          <h3 className="card-title"><Icon name="folder" /> {t('Archivos')}</h3>
           <p className="muted small-text">{system?.dataDir}</p>
           <div className="row">
-            <button className="btn small ghost" onClick={() => call('system:openFolder')}>Carpeta del launcher</button>
-            <button className="btn small ghost" onClick={() => call('system:openFolder', 'instances')}>Perfiles</button>
+            <button className="btn small ghost" onClick={() => call('system:openFolder')}>{t('Carpeta del launcher')}</button>
+            <button className="btn small ghost" onClick={() => call('system:openFolder', 'instances')}>{t('Perfiles')}</button>
           </div>
-          <small className="field-hint">Versión {system?.version}</small>
+          <small className="field-hint">{t('Versión {v}', { v: system?.version })}</small>
         </section>
       </div>
     </div>

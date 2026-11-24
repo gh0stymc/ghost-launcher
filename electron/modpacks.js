@@ -9,13 +9,14 @@ const modrinth = require('./modrinth')
 const versions = require('./versions')
 const { getJson, download } = require('./http')
 const { copyEntries } = require('./copytree')
+const { t } = require('./i18n')
 
 const API = 'https://api.modrinth.com/v2'
 
 // Evita que un modpack malicioso escriba fuera de la carpeta del perfil
 function safeJoin (base, rel) {
   const target = path.resolve(base, rel)
-  if (!target.startsWith(path.resolve(base) + path.sep)) throw new Error(`Ruta no permitida en el modpack: ${rel}`)
+  if (!target.startsWith(path.resolve(base) + path.sep)) throw new Error(t('Ruta no permitida en el modpack: {rel}', { rel: rel }))
   return target
 }
 
@@ -40,7 +41,7 @@ async function fetchBytes (url) {
 function loaderFrom (deps) {
   if (deps['fabric-loader']) return { loader: 'fabric', loaderVersion: deps['fabric-loader'] }
   const other = ['forge', 'neoforge', 'quilt-loader'].find(k => deps[k])
-  if (other) throw new Error(`Este modpack usa ${other.replace('-loader', '')}. Ghost Launcher de momento solo es compatible con Fabric.`)
+  if (other) throw new Error(t('Este modpack usa {x}. Ghost Launcher de momento solo es compatible con Fabric.', { x: other.replace('-loader', '') }))
   return { loader: 'vanilla', loaderVersion: null }
 }
 
@@ -49,10 +50,10 @@ function loaderFrom (deps) {
 async function importMrpack (file, { name, source } = {}, onProgress = () => {}) {
   const zip = new AdmZip(file)
   const indexEntry = zip.getEntry('modrinth.index.json')
-  if (!indexEntry) throw new Error('El archivo no es un modpack de Modrinth válido')
+  if (!indexEntry) throw new Error(t('El archivo no es un modpack de Modrinth válido'))
   const index = JSON.parse(indexEntry.getData().toString('utf8'))
   const deps = index.dependencies || {}
-  if (!deps.minecraft) throw new Error('El modpack no indica la versión de Minecraft')
+  if (!deps.minecraft) throw new Error(t('El modpack no indica la versión de Minecraft'))
   const { loader, loaderVersion } = loaderFrom(deps)
 
   const profile = profiles.create({ name: name || index.name, version: deps.minecraft, loader, loaderVersion, source: source || { type: 'mrpack' } })
@@ -66,11 +67,11 @@ async function importMrpack (file, { name, source } = {}, onProgress = () => {})
       for (const url of f.downloads || []) {
         try { await download(url, dest, { sha1: f.hashes?.sha1 }); ok = true; break } catch { /* siguiente enlace */ }
       }
-      if (!ok) throw new Error(`No se pudo descargar ${path.basename(f.path)}`)
-      onProgress({ stage: `Descargando mods (${++done}/${files.length})`, current: done, total: files.length })
+      if (!ok) throw new Error(t('No se pudo descargar {x}', { x: path.basename(f.path) }))
+      onProgress({ stage: t('Descargando mods ({x}/{length})', { x: ++done, length: files.length }), current: done, total: files.length })
     })
 
-    onProgress({ stage: 'Copiando configuración', current: 0, total: 0 })
+    onProgress({ stage: t('Copiando configuración'), current: 0, total: 0 })
     for (const entry of zip.getEntries()) {
       if (entry.isDirectory) continue
       const m = entry.entryName.match(/^(client-overrides|overrides)\/(.+)$/)
@@ -80,7 +81,7 @@ async function importMrpack (file, { name, source } = {}, onProgress = () => {})
       fs.writeFileSync(dest, entry.getData())
     }
 
-    onProgress({ stage: 'Reconociendo mods', current: 0, total: 0 })
+    onProgress({ stage: t('Reconociendo mods'), current: 0, total: 0 })
     await modrinth.identify(profile.id).catch(() => {})
     return profile
   } catch (e) {
@@ -92,15 +93,15 @@ async function importMrpack (file, { name, source } = {}, onProgress = () => {})
 async function installModrinthPack (projectId, onProgress = () => {}) {
   const project = await getJson(`${API}/project/${projectId}`)
   const list = await getJson(`${API}/project/${projectId}/version?loaders=${encodeURIComponent('["fabric"]')}`)
-  if (!list.length) throw new Error(`${project.title} no tiene versión para Fabric`)
+  if (!list.length) throw new Error(t('{title} no tiene versión para Fabric', { title: project.title }))
   const version = list.find(v => v.version_type === 'release') || list[0]
   const file = version.files.find(f => f.primary) || version.files[0]
 
   const tmp = path.join(paths.base(), 'tmp', file.filename)
-  onProgress({ stage: `Descargando ${project.title}`, current: 0, total: file.size })
+  onProgress({ stage: t('Descargando {title}', { title: project.title }), current: 0, total: file.size })
   await download(file.url, tmp, {
     sha1: file.hashes.sha1,
-    onProgress: (d, t) => onProgress({ stage: `Descargando ${project.title}`, current: d, total: t || file.size })
+    onProgress: (d, total) => onProgress({ stage: t('Descargando {title}', { title: project.title }), current: d, total: total || file.size })
   })
   try {
     const profile = await importMrpack(tmp, { name: project.title, source: { type: 'modrinth', projectId, versionId: version.id } }, onProgress)
@@ -193,14 +194,14 @@ async function listLunar () {
 
 async function importLunar (folderName, { version, name, copySaves } = {}, onProgress = () => {}) {
   const src = path.join(lunarDir(), path.basename(folderName))
-  if (!fs.existsSync(src)) throw new Error('No se encuentra ese perfil de Lunar')
+  if (!fs.existsSync(src)) throw new Error(t('No se encuentra ese perfil de Lunar'))
   const mods = lunarMods(src)
   const loader = mods.length ? 'fabric' : 'vanilla'
   const mcVersion = version || await guessVersion(src, folderName, mods)
-  if (!mcVersion) throw new Error('No se pudo saber la versión de Minecraft. Elígela a mano.')
+  if (!mcVersion) throw new Error(t('No se pudo saber la versión de Minecraft. Elígela a mano.'))
   if (loader === 'fabric') {
     const fabricVersions = await versions.fabricGameVersions()
-    if (!fabricVersions.includes(mcVersion)) throw new Error(`Fabric no está disponible para ${mcVersion}`)
+    if (!fabricVersions.includes(mcVersion)) throw new Error(t('Fabric no está disponible para {mcVersion}', { mcVersion: mcVersion }))
   }
 
   const profile = profiles.create({ name: name || prettyName(folderName), version: mcVersion, loader, source: { type: 'lunar', folder: folderName }, importing: true })
@@ -209,9 +210,9 @@ async function importLunar (folderName, { version, name, copySaves } = {}, onPro
     // Copia en segundo plano (los mundos pueden ocupar mucho)
     const items = [...mods.map(m => path.join('mods', m)), ...LUNAR_COPY, ...(copySaves ? ['saves'] : [])]
       .filter(e => fs.existsSync(path.join(src, e)))
-    await copyEntries(src, dest, items, onProgress, 'Copiando el perfil de Lunar')
+    await copyEntries(src, dest, items, onProgress, t('Copiando el perfil de Lunar'))
 
-    onProgress({ stage: 'Reconociendo mods', current: 0, total: 0 })
+    onProgress({ stage: t('Reconociendo mods'), current: 0, total: 0 })
     await modrinth.identify(profile.id).catch(() => {})
 
     profiles.update(profile.id, { importing: false })

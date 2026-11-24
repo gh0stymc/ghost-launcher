@@ -2,7 +2,9 @@ import React from 'react'
 import {
   House, Layers, Puzzle, Settings, Terminal, Play, CircleStop, Plus, Search, FolderOpen, Trash, Pencil,
   Download, Check, TriangleAlert, User, LogOut, X, Minus, Square, Copy, ChevronsUpDown, Cpu, Palette,
-  Sparkles, Upload, Package, ImagePlus, Ghost, Clock, Gauge, Boxes, ArrowLeft, RefreshCw, FileArchive, MemoryStick, Timer, Shirt, Volume2, Film
+  Sparkles, Upload, Package, ImagePlus, Ghost, Clock, Gauge, Boxes, ArrowLeft, RefreshCw, FileArchive, MemoryStick, Timer, Shirt, Volume2, Film,
+  Globe, Users, Image, Sun, Star, Wand, ChevronRight,
+  ChartColumn, ChartLine, Trophy, Skull, Swords, Flame, Zap, Images, Lock, Gift, Rocket, Server, Calendar, ExternalLink, ChevronLeft, UserPlus
 } from 'lucide-react'
 
 // Nombres cortos para los iconos de lucide
@@ -12,7 +14,10 @@ const icons = {
   download: Download, check: Check, alert: TriangleAlert, user: User, logout: LogOut, x: X, minus: Minus,
   square: Square, copy: Copy, chevron: ChevronsUpDown, cpu: Cpu, palette: Palette, sparkles: Sparkles,
   upload: Upload, package: Package, image: ImagePlus, ghost: Ghost, clock: Clock, gauge: Gauge,
-  boxes: Boxes, back: ArrowLeft, refresh: RefreshCw, archive: FileArchive, ram: MemoryStick, timer: Timer, shirt: Shirt, sound: Volume2, film: Film
+  boxes: Boxes, back: ArrowLeft, refresh: RefreshCw, archive: FileArchive, ram: MemoryStick, timer: Timer, shirt: Shirt, sound: Volume2, film: Film,
+  globe: Globe, users: Users, picture: Image, sun: Sun, star: Star, wand: Wand, 'chevron-right': ChevronRight,
+  chart: ChartColumn, line: ChartLine, trophy: Trophy, skull: Skull, swords: Swords, flame: Flame, zap: Zap, images: Images,
+  lock: Lock, gift: Gift, rocket: Rocket, server: Server, calendar: Calendar, external: ExternalLink, 'chevron-left': ChevronLeft, 'user-plus': UserPlus
 }
 
 export function Icon ({ name, size = 18, className = '', fill }) {

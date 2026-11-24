@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { t } from '../i18n.js'
 import { call } from '../api.js'
 import { Icon } from '../components/Icon.jsx'
 import ghostPreview from '../../resources/loading-screen/frame_0015.jpg'
@@ -30,7 +31,7 @@ const snap = (c) => c.toDataURL('image/jpeg', 0.86)
 async function convert (file, onProgress) {
   const ext = file.split('.').pop().toLowerCase()
   const type = TYPES[ext]
-  if (!type) throw new Error('Formato no compatible')
+  if (!type) throw new Error(t('Formato no compatible'))
   const bytes = await call('loading:readFile', file)
   const blob = new Blob([bytes], { type })
   await call('loading:begin')
@@ -44,7 +45,7 @@ async function convert (file, onProgress) {
       video.src = url
       await new Promise((resolve, reject) => {
         video.onloadeddata = resolve
-        video.onerror = () => reject(new Error('No se pudo abrir el vídeo (prueba con MP4 o WebM)'))
+        video.onerror = () => reject(new Error(t('No se pudo abrir el vídeo (prueba con MP4 o WebM)')))
       })
       // Algunos WebM no guardan la duración: se averigua saltando al final
       if (!Number.isFinite(video.duration)) {
@@ -123,7 +124,7 @@ export default function LoadingScreenCard ({ settings, updateSettings, notify })
       const i = await convert(file, setProgress)
       setInfo(i)
       updateSettings({ loadingScreen: 'custom' })
-      notify(i.frames > 1 ? `Pantalla de carga lista (${i.frames} fotogramas)` : 'Pantalla de carga lista')
+      notify(i.frames > 1 ? t('Pantalla de carga lista ({n} fotogramas)', { n: i.frames }) : t('Pantalla de carga lista'))
     } catch (e) {
       notify(e.message, 'error')
     } finally {
@@ -140,32 +141,31 @@ export default function LoadingScreenCard ({ settings, updateSettings, notify })
 
   return (
     <section className="card">
-      <h3 className="card-title"><Icon name="film" /> Pantalla de carga</h3>
+      <h3 className="card-title"><Icon name="film" /> {t('Pantalla de carga')}</h3>
       <p className="muted small-text" style={{ margin: 0 }}>
-        La que sale al abrir el juego, en lugar de la roja de Mojang. Puedes poner una imagen, un GIF o un vídeo
-        (los vídeos se recortan a {MAX_SECONDS} segundos).
+        {t('La que sale al abrir el juego, en lugar de la roja de Mojang. Puedes poner una imagen, un GIF o un vídeo (los vídeos se recortan a {n} segundos).', { n: MAX_SECONDS })}
       </p>
       <div className={`loading-preview ${mode}`}>
-        {preview ? <img src={preview} alt="" /> : <span>{mode === 'classic' ? 'MOJANG' : 'Sin archivo todavía'}</span>}
+        {preview ? <img src={preview} alt="" /> : <span>{mode === 'classic' ? 'MOJANG' : t('Sin archivo todavía')}</span>}
         {progress !== null && (
           <div className="loading-progress">
-            <span>Preparando… {Math.round(progress * 100)}%</span>
+            <span>{t('Preparando…')} {Math.round(progress * 100)}%</span>
             <i style={{ width: `${progress * 100}%` }} />
           </div>
         )}
       </div>
       <div className="tabs loading-modes">
         {MODES.map(m => (
-          <button key={m.id} className={mode === m.id ? 'active' : ''} title={m.hint}
+          <button key={m.id} className={mode === m.id ? 'active' : ''} title={t(m.hint)}
             disabled={m.id === 'custom' && !info}
-            onClick={() => updateSettings({ loadingScreen: m.id })}>{m.label}</button>
+            onClick={() => updateSettings({ loadingScreen: m.id })}>{t(m.label)}</button>
         ))}
       </div>
       <div className="row">
-        <button className="btn small" onClick={upload} disabled={progress !== null}><Icon name="upload" size={15} /> Subir imagen, GIF o vídeo</button>
-        {info && <button className="btn small ghost" onClick={remove} disabled={progress !== null}><Icon name="trash" size={15} /> Quitar la mía</button>}
+        <button className="btn small" onClick={upload} disabled={progress !== null}><Icon name="upload" size={15} /> {t('Subir imagen, GIF o vídeo')}</button>
+        {info && <button className="btn small ghost" onClick={remove} disabled={progress !== null}><Icon name="trash" size={15} /> {t('Quitar la mía')}</button>}
       </div>
-      <small className="muted">Dentro del juego también puedes cambiarla en ghost client → Ajustes generales.</small>
+      <small className="muted">{t('Dentro del juego también puedes cambiarla en ghost client → Ajustes generales.')}</small>
     </section>
   )
 }

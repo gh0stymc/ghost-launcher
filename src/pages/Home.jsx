@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { t } from '../i18n.js'
 import { call, timeAgo, formatPlayTime, playTimeByVersion } from '../api.js'
 import { Icon } from '../components/Icon.jsx'
 import { ProgressBar, ProfileBadge, Empty, loaderLabel } from '../components/ui.jsx'
@@ -24,17 +25,17 @@ export default function Home ({ ctx, profile }) {
         {profile?.iconUrl && <div className="hero-cover" style={{ backgroundImage: `url(${profile.iconUrl})` }} />}
         <img className="hero-ghost" src={logo} alt="" />
         <div className="hero-content">
-          <p className="eyebrow">{active ? `Hola, ${active.name}` : 'Bienvenido a Ghost Launcher'}</p>
+          <p className="eyebrow">{active ? t('Hola, {name}', { name: active.name }) : t('Bienvenido a Ghost Launcher')}</p>
           <div className="hero-title">
             {profile && <ProfileBadge profile={profile} size={64} />}
-            <h1>{profile ? profile.name : 'Crea tu primer perfil'}</h1>
+            <h1>{profile ? profile.name : t('Crea tu primer perfil')}</h1>
           </div>
           {profile && (
             <div className="hero-meta">
               <span className="tag"><Icon name="boxes" size={13} /> {profile.version}</span>
               <span className="tag">{loaderLabel(profile)}</span>
               {profile.loader === 'fabric' && modCount !== null && <span className="tag"><Icon name="puzzle" size={13} /> {modCount} mods</span>}
-              {profile.playTime >= 60 && <span className="tag"><Icon name="timer" size={13} /> {formatPlayTime(profile.playTime)} jugadas</span>}
+              {profile.playTime >= 60 && <span className="tag"><Icon name="timer" size={13} /> {t('{time} jugadas', { time: formatPlayTime(profile.playTime) })}</span>}
               <span className="tag subtle"><Icon name="clock" size={13} /> {timeAgo(profile.lastPlayed)}</span>
             </div>
           )}
@@ -43,19 +44,19 @@ export default function Home ({ ctx, profile }) {
             {isRunning
               ? (
                 <button className="btn play running" onClick={() => call('game:stop', profile.id)}>
-                  <Icon name="stop" size={22} /> Cerrar juego
+                  <Icon name="stop" size={22} /> {t('Cerrar juego')}
                 </button>
                 )
               : (
                 <button className="btn play" disabled={busy} onClick={() => (profile ? launch() : setPage('profiles'))}>
                   <Icon name={profile ? 'play' : 'plus'} size={22} fill={profile ? 'currentColor' : undefined} />
-                  {busy ? 'Lanzando…' : profile ? 'Jugar' : 'Nuevo perfil'}
+                  {busy ? t('Lanzando…') : profile ? t('Jugar') : t('Nuevo perfil')}
                 </button>
                 )}
             {profile && (
               <>
                 <button className="btn glass" onClick={() => openMods(profile.id)}><Icon name="puzzle" /> Mods</button>
-                <button className="btn glass icon-only" title="Abrir carpeta" onClick={() => call('profiles:openFolder', profile.id)}><Icon name="folder" /></button>
+                <button className="btn glass icon-only" title={t('Abrir carpeta')} onClick={() => call('profiles:openFolder', profile.id)}><Icon name="folder" /></button>
               </>
             )}
           </div>
@@ -65,11 +66,11 @@ export default function Home ({ ctx, profile }) {
 
       <section>
         <div className="section-head">
-          <h2>Tus perfiles</h2>
-          <button className="btn small ghost" onClick={() => setPage('profiles')}>Ver todos</button>
+          <h2>{t('Tus perfiles')}</h2>
+          <button className="btn small ghost" onClick={() => setPage('profiles')}>{t('Ver todos')}</button>
         </div>
         {recent.length === 0
-          ? <Empty icon="ghost" title="Todavía no tienes perfiles" text="Un perfil es una instalación de Minecraft con su versión, mods y ajustes. También puedes importar uno de Lunar o Modrinth." />
+          ? <Empty icon="ghost" title={t('Todavía no tienes perfiles')} text={t('Un perfil es una instalación de Minecraft con su versión, mods y ajustes. También puedes importar uno de Lunar o Modrinth.')} />
           : (
             <div className="quick-grid">
               {recent.map(p => (
@@ -79,7 +80,7 @@ export default function Home ({ ctx, profile }) {
                     <strong>{p.name}</strong>
                     <small>{p.version} · {loaderLabel(p)}</small>
                   </div>
-                  {running.includes(p.id) && <span className="live-dot" title="En ejecución" />}
+                  {running.includes(p.id) && <span className="live-dot" title={t('En ejecución')} />}
                 </button>
               ))}
             </div>
@@ -102,18 +103,18 @@ function PlayTime ({ profiles }) {
     <section className="playtime card">
       <div className="playtime-head">
         <div>
-          <h2>Tiempo de juego</h2>
-          <small className="muted">Por versión de Minecraft, sumando todos tus perfiles</small>
+          <h2>{t('Tiempo de juego')}</h2>
+          <small className="muted">{t('Por versión de Minecraft, sumando todos tus perfiles')}</small>
         </div>
         <div className="playtime-total">
           <strong>{formatPlayTime(total)}</strong>
-          <small className="muted">en total</small>
+          <small className="muted">{t('en total')}</small>
         </div>
       </div>
       <Milestones profiles={profiles} total={total} />
 
-      {rows.length === 0 && <p className="muted small-text no-margin">Cuando juegues, aquí verás tus horas por versión.</p>}
-      <div className="playtime-list" role="table" aria-label="Tiempo de juego por versión">
+      {rows.length === 0 && <p className="muted small-text no-margin">{t('Cuando juegues, aquí verás tus horas por versión.')}</p>}
+      <div className="playtime-list" role="table" aria-label={t('Tiempo de juego por versión')}>
         {rows.map(r => (
           <div key={r.version} className="playtime-row" role="row" title={`${r.version}: ${formatPlayTime(r.seconds)}`}>
             <span className="playtime-version" role="cell">{r.version}</span>
@@ -151,17 +152,17 @@ function Milestones ({ profiles, total }) {
           return (
             <div key={h} className={`milestone ${got ? 'got' : ''}`} style={{ left: `${((i + 1) / MILESTONES.length) * 100}%` }}>
               <Medal hours={h} size={got ? 52 : 46} locked={!got}
-                title={got ? `Medalla de ${h} h${who ? ` · para ${who.name}` : ''}` : `Medalla de ${h} h · bloqueada`} />
+                title={got ? (who ? t('Medalla de {h} h · para {name}', { h, name: who.name }) : t('Medalla de {h} h', { h })) : t('Medalla de {h} h · bloqueada', { h })} />
               <strong>{h} h</strong>
-              <small>{got ? (who ? who.name : '¡Conseguida!') : 'Bloqueada'}</small>
+              <small>{got ? (who ? who.name : t('¡Conseguida!')) : t('Bloqueada')}</small>
             </div>
           )
         })}
       </div>
       <p className="milestones-next muted">
         {next
-          ? <>Siguiente medalla: <strong>{next} h</strong> · te faltan {formatPlayTime(next * 3600 - total)}. Se la lleva el perfil con el que llegues.</>
-          : '¡Has conseguido todas las medallas!'}
+          ? <>{t('Siguiente medalla:')} <strong>{next} h</strong> · {t('te faltan {time}. Se la lleva el perfil con el que llegues.', { time: formatPlayTime(next * 3600 - total) })}</>
+          : t('¡Has conseguido todas las medallas!')}
       </p>
     </div>
   )

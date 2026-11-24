@@ -6,6 +6,7 @@ const { app } = require('electron')
 const paths = require('./paths')
 const modrinth = require('./modrinth')
 const resolver = require('./resolver')
+const { t } = require('./i18n')
 
 const PROJECT_ID = 'ghost-client'
 
@@ -31,7 +32,7 @@ function forVersion (mcVersion) {
 
 function install (profile) {
   const jar = forVersion(profile.version)
-  if (!jar) throw new Error(`ghost client todavía no está disponible para ${profile.version}`)
+  if (!jar) throw new Error(t('ghost client todavía no está disponible para {version}', { version: profile.version }))
   const mods = path.join(paths.instance(profile.id), 'mods')
   fs.mkdirSync(mods, { recursive: true })
   // Quitamos versiones anteriores de ghost client

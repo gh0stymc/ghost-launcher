@@ -1,10 +1,15 @@
 # Ghost Launcher
 
-Launcher de Minecraft gratuito, hecho con Electron + React, con su propio cliente PvP:
-[ghost client](https://github.com/gh0stymc/ghost-client).
+Hola 👋 soy gh0stymc. Llevo un montón de horas jugando PvP en Minecraft, y como a muchos, lo que me gustaba de
+Lunar Client era tenerlo todo en un sitio: HUD, cosméticos, skins, rendimiento... pero siempre me faltaba poder
+hacerlo a mi manera, sin paywalls y en condiciones. Así que en vez de seguir quejándome, me puse a hacer el mío.
 
-**Descarga:** [última versión](https://github.com/gh0stymc/ghost-launcher/releases/latest) (Windows y Linux).
-Se actualiza solo.
+**Ghost Launcher** es eso: un launcher de Minecraft gratuito (Electron + React) con su propio cliente PvP,
+[ghost client](https://github.com/gh0stymc/ghost-client). La idea es sencilla — lo mejor de un launcher tipo Lunar,
+pero libre, en español y con su propia cara. Lo uso yo a diario, así que lo que no me gusta, lo cambio.
+
+**Descarga:** [última versión para Windows y Linux](https://ghost-server.gh0styclient.workers.dev/descargar).
+Se actualiza solo en segundo plano.
 
 > No es un producto oficial de Minecraft ni está aprobado por Mojang o Microsoft.
 > Minecraft se descarga de los servidores de Mojang y necesita una cuenta que tenga el juego comprado.
@@ -28,7 +33,7 @@ Se actualiza solo.
 - **Vestidor**: guarda tus skins y cambia entre ellas; se cambian en tu cuenta oficial, así que se ven en todos
   los servidores. También capas y copiar la skin de cualquier jugador.
 - **Tiempo de juego y medallas**: horas por perfil y versión, medallas a las 500, 750, 1000, 2500 y 5000 horas.
-- **Actualizaciones automáticas**: se descargan en segundo plano desde GitHub Releases.
+- **Actualizaciones automáticas**: se descargan solas en segundo plano desde el servidor de Ghost (Cloudflare).
 - **Personalización**: foto por perfil, color principal (el texto se adapta para que siempre se lea), fondo, ocultar el launcher al jugar.
 
 ## Uso
@@ -78,8 +83,9 @@ npm run dist       # crea el instalador en release/
 2. Sube el número de versión en `package.json`.
 3. Windows: `npx electron-builder --win --publish never`. Linux (desde Ubuntu): `npx electron-builder --linux`
    (AppImage, tar.gz, pacman para CachyOS/Arch y deb para Ubuntu).
-4. Crea la release en GitHub con los instaladores, `latest.yml` y `latest-linux.yml` (con los nombres de archivo
-   que aparecen dentro de esos `.yml`). Los launchers instalados la descargan solos.
+4. Sube el instalador y los `.yml` al servidor con `node tools/upload-release.js` (van a Cloudflare R2, servidos
+   por el Worker de [ghost-server](https://ghost-server.gh0styclient.workers.dev)). Deja solo la última versión en
+   el bucket. Los launchers instalados la descargan solos. Los binarios **no** se suben a este repositorio.
 
 ## Licencia
 

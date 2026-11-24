@@ -12,6 +12,9 @@ const java = require('./java')
 const modpacks = require('./modpacks')
 const builtins = require('./builtins')
 const resolver = require('./resolver')
+const options = require('./options')
+const social = require('./social')
+const { t } = require('./i18n')
 
 let win = null
 // "npm run dev" activa la recarga en vivo; si no, se carga la interfaz compilada
@@ -99,8 +102,8 @@ handle('wardrobe:list', () => wardrobe.list())
 handle('wardrobe:pickFiles', async () => {
   const { dialog } = require('electron')
   const res = await dialog.showOpenDialog(win, {
-    title: 'Elegir skins',
-    filters: [{ name: 'Skin de Minecraft', extensions: ['png'] }],
+    title: t('Elegir skins'),
+    filters: [{ name: t('Skin de Minecraft'), extensions: ['png'] }],
     properties: ['openFile', 'multiSelections']
   })
   return res.canceled ? [] : res.filePaths
@@ -113,6 +116,9 @@ handle('wardrobe:capeImage', (url) => wardrobe.capeImage(url))
 handle('wardrobe:update', (id, changes) => wardrobe.update(id, changes))
 handle('wardrobe:remove', (id) => wardrobe.remove(id))
 handle('wardrobe:apply', (id) => wardrobe.apply(id))
+// Cosméticos de ghost client (capas propias, gratis)
+handle('cosmetics:me', () => require('./ghostserver').me())
+handle('cosmetics:equip', (slot, id) => require('./ghostserver').equip(slot, id))
 
 // Pantalla de carga personalizada
 const loadingscreen = require('./loadingscreen')
@@ -120,15 +126,15 @@ handle('loading:info', () => loadingscreen.info())
 handle('loading:pickFile', async () => {
   const { dialog } = require('electron')
   const res = await dialog.showOpenDialog(win, {
-    title: 'Elegir imagen, GIF o vídeo',
-    filters: [{ name: 'Imagen, GIF o vídeo', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'mp4', 'webm', 'mov', 'mkv'] }],
+    title: t('Elegir imagen, GIF o vídeo'),
+    filters: [{ name: t('Imagen, GIF o vídeo'), extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'mp4', 'webm', 'mov', 'mkv'] }],
     properties: ['openFile']
   })
   return res.canceled ? null : res.filePaths[0]
 })
 handle('loading:readFile', (file) => {
   const fs = require('fs')
-  if (fs.statSync(file).size > 300 * 1024 * 1024) throw new Error('El archivo es demasiado grande (máximo 300 MB)')
+  if (fs.statSync(file).size > 300 * 1024 * 1024) throw new Error(t('El archivo es demasiado grande (máximo 300 MB)'))
   return fs.readFileSync(file)
 })
 handle('loading:begin', () => loadingscreen.begin())
@@ -139,9 +145,9 @@ handle('settings:set', (changes) => store.update(s => Object.assign(s.settings, 
 
 // Cuentas
 handle('auth:list', () => auth.accounts())
-handle('auth:login', async () => { await auth.login(); return auth.accounts() })
-handle('auth:select', (uuid) => auth.select(uuid))
-handle('auth:logout', (uuid) => auth.logout(uuid))
+handle('auth:login', async () => { await auth.login(); social.restart(); return auth.accounts() })
+handle('auth:select', (uuid) => { const r = auth.select(uuid); social.restart(); return r })
+handle('auth:logout', (uuid) => { const r = auth.logout(uuid); social.restart(); return r })
 
 // Versiones
 handle('versions:list', () => versions.listVersions())
@@ -163,7 +169,15 @@ handle('content:search', (params) => modrinth.search(params))
 handle('content:install', async (profileId, projectId, type) => {
   const profile = profiles.list().find(p => p.id === profileId)
   try {
-    const installed = await modrinth.install(profile, projectId, type, p => send('content:progress', p))
+    // Los shaders necesitan Iris (y Sodium): si el perfil no lo tiene, se instala antes
+    let extra = []
+    if (type === 'shader') {
+      if (profile.loader !== 'fabric') throw new Error(t('Los shaders necesitan un perfil con Fabric. Edita el perfil y cámbialo a Fabric.'))
+      const hasIris = modrinth.list(profile.id).some(i => i.type === 'mod' && (i.projectId === 'YL57xq9U' || /^iris/i.test(i.file)))
+      if (!hasIris) extra = await modrinth.install(profile, 'iris', 'mod', p => send('content:progress', p))
+    }
+    const installed = [...await modrinth.install(profile, projectId, type, p => send('content:progress', p)), ...extra]
+    if (extra.length) await resolver.resolve(profile, p => send('content:progress', p)).catch(() => {})
     if (type === 'mod') await resolver.resolve(profile, p => send('content:progress', p)).catch(() => {})
     return installed
   } finally {
@@ -202,6 +216,13 @@ async function withBuiltins (result) {
   return result
 }
 handle('content:list', (profileId) => modrinth.list(profileId))
+// Texture packs y shaders en uso dentro del juego (se activan sin tener que abrir el menú de Minecraft)
+handle('packs:active', (profileId) => options.activePacks(profileId))
+handle('packs:set', (profileId, type, file, on) => {
+  if (type === 'resourcepack') options.setResourcePack(profileId, file, on)
+  else if (type === 'shader') options.setShader(profileId, file, on)
+  return options.activePacks(profileId)
+})
 handle('content:toggle', (profileId, type, file, enabled) => modrinth.toggle(profileId, type, file, enabled))
 handle('content:remove', (profileId, type, file) => modrinth.remove(profileId, type, file))
 handle('content:addFiles', async (profileId, files) => {
@@ -213,7 +234,7 @@ handle('content:addFiles', async (profileId, files) => {
 handle('profiles:setIcon', (id, dataUrl) => {
   if (!dataUrl) return profiles.setIcon(id, null)
   const m = /^data:image\/png;base64,(.+)$/.exec(dataUrl)
-  if (!m) throw new Error('Imagen no válida')
+  if (!m) throw new Error(t('Imagen no válida'))
   return profiles.setIcon(id, Buffer.from(m[1], 'base64'))
 })
 
@@ -222,8 +243,8 @@ const importProgress = (p) => send('import:progress', p)
 handle('modpacks:pickFile', async () => {
   const { dialog } = require('electron')
   const res = await dialog.showOpenDialog(win, {
-    title: 'Elegir modpack de Modrinth',
-    filters: [{ name: 'Modpack de Modrinth', extensions: ['mrpack', 'zip'] }],
+    title: t('Elegir modpack de Modrinth'),
+    filters: [{ name: t('Modpack de Modrinth'), extensions: ['mrpack', 'zip'] }],
     properties: ['openFile']
   })
   return res.canceled ? null : res.filePaths[0]
@@ -257,14 +278,95 @@ handle('modrinthApp:addHours', (profileId, id) => {
   return { seconds, medals: require('./medals').sync(profileId) }
 })
 
-// Juego
-handle('game:launch', async (profileId) => {
+// Juego (server: entrar directamente en ese servidor, para unirse a un amigo)
+handle('game:launch', async (profileId, server = null) => {
+  if (server && !/^[\w.-]+(:\d{1,5})?$/.test(server)) throw new Error(t('Servidor no válido'))
   await launcher.launch(profileId, (event, data) => {
     send(`game:${event}`, data)
     if (event === 'started' && store.get().settings.closeOnLaunch) win.hide()
     if (event === 'closed' && !win.isVisible()) win.show()
-  })
+    // Horas nuevas: el servidor de ghost client las usa para desbloquear cosméticos
+    if (event === 'playtime' || event === 'closed') social.syncHours()
+  }, { server })
 })
+
+// Exportar / importar perfiles (archivo .ghostprofile)
+const share = require('./share')
+handle('share:inspect', (profileId) => share.inspect(profileId))
+handle('share:export', async (profileId, opts) => {
+  const { dialog } = require('electron')
+  const profile = profiles.list().find(p => p.id === profileId)
+  const safe = (profile?.name || 'perfil').replace(/[\\/:*?"<>|]+/g, '').trim() || 'perfil'
+  const res = await dialog.showSaveDialog(win, {
+    title: t('Exportar perfil'),
+    defaultPath: path.join(app.getPath('desktop'), `${safe}.ghostprofile`),
+    filters: [{ name: t('Perfil de Ghost Launcher'), extensions: ['ghostprofile'] }]
+  })
+  if (res.canceled || !res.filePath) return null
+  try {
+    return await share.exportProfile(profileId, res.filePath, opts, p => send('share:progress', p))
+  } finally { send('share:progress', null) }
+})
+handle('share:exportMrpack', async (profileId, opts) => {
+  const { dialog } = require('electron')
+  const profile = profiles.list().find(p => p.id === profileId)
+  const safe = (profile?.name || 'perfil').replace(/[\\/:*?"<>|]+/g, '').trim() || 'perfil'
+  const res = await dialog.showSaveDialog(win, {
+    title: t('Exportar a Modrinth / Lunar'),
+    defaultPath: path.join(app.getPath('desktop'), `${safe}.mrpack`),
+    filters: [{ name: t('Modpack de Modrinth'), extensions: ['mrpack'] }]
+  })
+  if (res.canceled || !res.filePath) return null
+  try {
+    return await require('./mrpack').exportMrpack(profileId, res.filePath, opts, p => send('share:progress', p))
+  } finally { send('share:progress', null) }
+})
+handle('share:showFile', (file) => shell.showItemInFolder(file))
+handle('share:pick', async () => {
+  const { dialog } = require('electron')
+  const res = await dialog.showOpenDialog(win, {
+    title: t('Importar perfil'),
+    filters: [{ name: t('Perfil de Ghost Launcher'), extensions: ['ghostprofile', 'zip'] }],
+    properties: ['openFile']
+  })
+  if (res.canceled || !res.filePaths[0]) return null
+  return { file: res.filePaths[0], ...share.peek(res.filePaths[0]) }
+})
+handle('share:import', async (file) => {
+  try {
+    return await share.importProfile(file, p => send('share:progress', p))
+  } finally { send('share:progress', null) }
+})
+
+// Optimizar un perfil según el PC
+handle('optimize:plan', (profileId) => require('./optimize').plan(profileId))
+handle('optimize:apply', async (profileId, ids) => {
+  try {
+    return await require('./optimize').apply(profileId, ids, p => send('share:progress', p))
+  } finally { send('share:progress', null) }
+})
+
+// Galería de capturas de todos los perfiles
+const gallery = require('./gallery')
+handle('gallery:list', () => gallery.list())
+handle('gallery:open', (profileId, name) => gallery.open(profileId, name))
+handle('gallery:show', (profileId, name) => gallery.show(profileId, name))
+handle('gallery:copy', (profileId, name) => gallery.copy(profileId, name))
+handle('gallery:remove', (profileId, name) => gallery.remove(profileId, name))
+
+// Estadísticas de PvP (las guarda ghost client en cada perfil)
+handle('stats:all', () => require('./stats').all())
+
+// Amigos de ghost client
+handle('social:get', () => social.get())
+handle('social:reconnect', () => social.reconnect())
+handle('social:add', (name) => social.add(name))
+handle('social:accept', (uuid) => social.accept(uuid))
+handle('social:decline', (uuid) => social.decline(uuid))
+handle('social:cancel', (uuid) => social.cancel(uuid))
+handle('social:remove', (uuid) => social.remove(uuid))
+handle('social:clearInvite', () => social.clearInvite())
+handle('social:markRead', (uuid) => social.markRead(uuid))
 handle('game:stop', (profileId) => launcher.stop(profileId))
 
 // Actualizaciones del launcher
@@ -272,7 +374,7 @@ const updater = require('./updater')
 handle('update:status', () => updater.get())
 handle('update:check', () => updater.check())
 handle('update:install', () => {
-  if (launcher.runningIds().length) throw new Error('Cierra el juego antes de actualizar')
+  if (launcher.runningIds().length) throw new Error(t('Cierra el juego antes de actualizar'))
   updater.install()
 })
 handle('game:running', () => launcher.runningIds())
@@ -280,6 +382,12 @@ handle('game:running', () => launcher.runningIds())
 // Solo para desarrollo: ML_DATA cambia la carpeta de datos y ML_SCREENSHOT guarda una captura y cierra
 // Misma carpeta de datos tanto instalado como con "npm start"
 app.setPath('userData', process.env.ML_DATA || path.join(app.getPath('appData'), 'ghost-launcher'))
+// Windows necesita el id de la app para enseñar avisos del escritorio con el nombre y el icono del launcher
+// Solo en el launcher instalado: si "npx electron ." (icono de Electron) usara el mismo id, Windows se quedaría con
+// ese icono en la barra de tareas para el launcher de verdad.
+if (process.platform === 'win32') app.setAppUserModelId(app.isPackaged ? 'com.arturo.ghostlauncher' : 'com.arturo.ghostlauncher.dev')
+// Protocolo para enseñar las capturas en la galería
+gallery.registerScheme()
 
 app.whenReady().then(() => {
   // Importaciones que quedaron a medias (el launcher se cerró mientras copiaba): se borran
@@ -291,12 +399,27 @@ app.whenReady().then(() => {
   } catch (e) { console.error('[import]', e) }
   // Medallas pendientes (por ejemplo, si se importaron horas jugadas)
   try { require('./medals').sync() } catch (e) { console.error('[medals]', e) }
+  gallery.registerHandler()
   createWindow()
   updater.init(send)
+  // Amigos: avisos en el escritorio (al pulsarlos se abre el launcher en Amigos)
+  social.init(send, (title, body) => {
+    const { Notification } = require('electron')
+    if (!Notification.isSupported() || (win && win.isFocused())) return
+    const n = new Notification({ title, body, icon: path.join(__dirname, 'assets', 'icon.png') })
+    n.on('click', () => { if (win) { win.show(); win.focus(); send('nav:page', 'friends') } })
+    n.show()
+  })
   if (process.env.ML_SCREENSHOT) {
     win.webContents.once('did-finish-load', async () => {
       const pages = (process.env.ML_PAGES || 'home').split(',')
       await new Promise(r => setTimeout(r, 2500)) // a que la interfaz cargue sus datos
+      // y a que exista el menú (si el equipo va lento tarda más)
+      for (let i = 0; i < 40; i++) {
+        if (await win.webContents.executeJavaScript('document.querySelectorAll(".nav-item").length > 3').catch(() => false)) break
+        await new Promise(r => setTimeout(r, 250))
+      }
+      await new Promise(r => setTimeout(r, 800))
       if (process.env.ML_EVAL) console.log('[eval]', await win.webContents.executeJavaScript(process.env.ML_EVAL).catch(e => 'ERROR ' + e.message))
       // Formato: "Página" o "Página>Texto de un botón a pulsar"
       for (const p of pages) {

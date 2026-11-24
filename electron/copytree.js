@@ -3,6 +3,7 @@
 const fs = require('fs')
 const fsp = require('fs/promises')
 const path = require('path')
+const { t } = require('./i18n')
 
 const MB = 1024 * 1024
 const fmt = (b) => (b >= 1024 * MB ? `${(b / 1024 / MB).toFixed(1)} GB` : `${Math.round(b / MB)} MB`)
@@ -43,10 +44,10 @@ async function copyEntries (srcDir, destDir, entries, onProgress = () => {}, lab
     done += f.size
     if (Date.now() - last > 150) {
       last = Date.now()
-      onProgress({ stage: `${label} (${fmt(done)} de ${fmt(total)})`, current: done, total })
+      onProgress({ stage: t('{label} ({x} de {x2})', { label: label, x: fmt(done), x2: fmt(total) }), current: done, total })
     }
   }
-  onProgress({ stage: `${label} (${fmt(total)})`, current: total, total })
+  onProgress({ stage: t('{label} ({x})', { label: label, x: fmt(total) }), current: total, total })
   return { files: files.length, bytes: total }
 }
 

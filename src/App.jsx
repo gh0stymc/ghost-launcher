@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { call, on } from './api.js'
+import { t, setLang } from './i18n.js'
 import { accentVars } from './color.js'
 import { toSquarePng, base64ToBlob } from './image.js'
 import { Icon } from './components/Icon.jsx'
@@ -13,6 +14,9 @@ import Content from './pages/Content.jsx'
 import Wardrobe from './pages/Wardrobe.jsx'
 import Settings from './pages/Settings.jsx'
 import Console from './pages/Console.jsx'
+import Friends from './pages/Friends.jsx'
+import Stats from './pages/Stats.jsx'
+import Gallery from './pages/Gallery.jsx'
 
 export default function App () {
   const [page, setPage] = useState('home')
@@ -61,13 +65,17 @@ export default function App () {
       on('game:playtime', () => refreshProfiles()),
       // Medalla nueva al llegar a un hito de horas
       on('game:medal', ({ hours, profileName }) => {
-        notify(`¡Nueva medalla! Has llegado a ${hours} horas jugadas. Se queda en «${profileName}».`, 'medal', { medal: hours })
+        notify(t('¡Nueva medalla! Has llegado a {hours} horas jugadas. Se queda en «{name}».', { hours, name: profileName }), 'medal', { medal: hours })
         refreshProfiles()
       }),
+      // Avisos de amigos (conectado, mensaje, invitación...) dentro del launcher
+      on('social:event', (e) => notify(e.body ? `${e.title} · ${e.body}` : e.title, e.kind === 'error' ? 'error' : 'info', e.kind === 'invite' ? { page: 'friends' } : {})),
+      // Al pulsar un aviso del escritorio
+      on('nav:page', (p) => setPage(p)),
       on('game:closed', ({ profileId, code }) => {
         setRunning(r => r.filter(id => id !== profileId))
         refreshProfiles()
-        if (code && code !== 0) notify(`El juego se cerró con un error (código ${code}). Revisa la consola.`, 'error')
+        if (code && code !== 0) notify(t('El juego se cerró con un error (código {code}). Revisa la consola.', { code }), 'error')
       })
     ]
     return () => offs.forEach(off => off())
@@ -92,13 +100,14 @@ export default function App () {
     setSettings(await call('settings:set', changes))
   }
 
-  const launch = async (profileId = selected) => {
+  // server: entrar directamente en ese servidor (unirse a un amigo)
+  const launch = async (profileId = selected, server = null) => {
     if (!profileId) return setPage('profiles')
-    if (!accounts.active) return notify('Inicia sesión con tu cuenta de Microsoft para jugar', 'error')
+    if (!accounts.active) return notify(t('Inicia sesión con tu cuenta de Microsoft para jugar'), 'error')
     setLogs([])
-    setProgress({ stage: 'Preparando…', current: 0, total: 0 })
+    setProgress({ stage: t('Preparando…'), current: 0, total: 0 })
     try {
-      await call('game:launch', profileId)
+      await call('game:launch', profileId, server)
     } catch (e) {
       setProgress(null)
       notify(e.message, 'error')
@@ -130,6 +139,8 @@ export default function App () {
   const selectedProfile = useMemo(() => profiles.find(p => p.id === selected), [profiles, selected])
 
   if (!settings) return <div className="boot"><div className="spinner" /></div>
+  // El idioma se aplica antes de pintar: todas las pantallas usan t() al dibujarse
+  setLang(settings.language)
 
   return (
     <div className="app">
@@ -145,13 +156,16 @@ export default function App () {
             {page === 'content' && <Content ctx={ctx} />}
             {page === 'wardrobe' && <Wardrobe ctx={ctx} />}
             {page === 'settings' && <Settings ctx={ctx} />}
+            {page === 'friends' && <Friends ctx={ctx} />}
+            {page === 'stats' && <Stats ctx={ctx} />}
+            {page === 'gallery' && <Gallery ctx={ctx} />}
             {page === 'console' && <Console ctx={ctx} />}
           </div>
           </ErrorBoundary>
         </main>
       </div>
       {toast && (
-        <div key={toast.id} className={`toast ${toast.kind}`} onClick={() => setToast(null)}>
+        <div key={toast.id} className={`toast ${toast.kind}`} onClick={() => { if (toast.page) setPage(toast.page); setToast(null) }}>
           {toast.medal ? <Medal hours={toast.medal} size={30} /> : <Icon name={toast.kind === 'error' ? 'alert' : 'check'} />}
           <span>{toast.text}</span>
         </div>

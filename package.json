@@ -1,6 +1,6 @@
 {
   "name": "ghost-launcher",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Ghost Launcher: launcher de Minecraft",
   "main": "electron/main.js",
   "scripts": {
@@ -59,7 +59,8 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "shortcutName": "Ghost Launcher"
+      "shortcutName": "Ghost Launcher",
+      "artifactName": "Ghost-Launcher-Setup-${version}.${ext}"
     },
     "extraResources": [
       {
@@ -118,10 +119,8 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "gh0stymc",
-        "repo": "ghost-launcher",
-        "releaseType": "release"
+        "provider": "generic",
+        "url": "https://ghost-server.gh0styclient.workers.dev/updates"
       }
     ],
     "deb": {

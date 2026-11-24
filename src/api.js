@@ -1,3 +1,5 @@
+import { t } from './i18n.js'
+
 // Atajo para hablar con el proceso principal: lanza un error si algo falla
 export async function call (channel, ...args) {
   const res = await window.launcher.call(channel, ...args)
@@ -16,20 +18,20 @@ export const formatBytes = (n) => {
 
 export const formatGB = (mb) => `${(mb / 1024).toFixed(mb % 1024 ? 1 : 0)} GB`
 
-export const timeAgo = (t) => {
-  if (!t) return 'Nunca jugado'
-  const s = (Date.now() - t) / 1000
-  if (s < 60) return 'Hace un momento'
-  if (s < 3600) return `Hace ${Math.floor(s / 60)} min`
-  if (s < 86400) return `Hace ${Math.floor(s / 3600)} h`
+export const timeAgo = (time) => {
+  if (!time) return t('Nunca jugado')
+  const s = (Date.now() - time) / 1000
+  if (s < 60) return t('Hace un momento')
+  if (s < 3600) return t('Hace {n} min', { n: Math.floor(s / 60) })
+  if (s < 86400) return t('Hace {n} h', { n: Math.floor(s / 3600) })
   const d = Math.floor(s / 86400)
-  return `Hace ${d} ${d === 1 ? 'día' : 'días'}`
+  return d === 1 ? t('Hace 1 día') : t('Hace {n} días', { n: d })
 }
 
 // Tiempo jugado (en segundos) en texto corto: 45 min, 3 h 20 min, 120 h
 export const formatPlayTime = (seconds) => {
   const s = seconds || 0
-  if (s < 60) return 'Sin jugar'
+  if (s < 60) return t('Sin jugar')
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   if (h === 0) return `${m} min`

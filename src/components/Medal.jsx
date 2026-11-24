@@ -1,4 +1,5 @@
 import React, { useId } from 'react'
+import { t } from '../i18n.js'
 
 // Medallas por horas jugadas. Cada nivel tiene su forma, su material y su emblema:
 // 500 oro (moneda), 750 esmeralda (hexágono), 1000 amatista (escudo con fantasma),
@@ -91,8 +92,8 @@ export function Medal ({ hours, size = 32, locked = false, title }) {
 
   return (
     <svg className={`medal ${locked ? 'locked' : ''} tier-${tier}`} width={size} height={size} viewBox="0 0 48 48" role="img"
-      style={{ '--medal-glow': m.glow }} aria-label={title || `Medalla de ${hours} horas (${m.name})`}>
-      <title>{title || `Medalla de ${hours} horas · ${m.name}`}</title>
+      style={{ '--medal-glow': m.glow }} aria-label={title || t('Medalla de {h} horas ({name})', { h: hours, name: t(m.name) })}>
+      <title>{title || t('Medalla de {h} horas · {name}', { h: hours, name: t(m.name) })}</title>
       <defs>
         <linearGradient id={`f${id}`} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0" stopColor={m.light} />

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
+import { t } from '../i18n.js'
 import { call, on, timeAgo, formatPlayTime } from '../api.js'
 import { toSquarePng, pickImage } from '../image.js'
 import { Icon } from '../components/Icon.jsx'
 import { Modal, Field, RamSlider, Toggle, ProfileBadge, Empty, ProgressBar, loaderLabel } from '../components/ui.jsx'
 import ghostLogo from '../assets/logo.png'
 import UpgradeModal, { ModeSwitch } from './UpgradeModal.jsx'
+import { OptimizeModal, ExportModal, ImportProfileModal } from './ProfileTools.jsx'
 
 const COLORS = ['#7c5cff', '#22c55e', '#f97316', '#06b6d4', '#ec4899', '#eab308', '#ef4444', '#94a3b8']
 
@@ -12,6 +14,14 @@ export default function Profiles ({ ctx }) {
   const { profiles, refreshProfiles, selected, setSelected, launch, running, progress, setPage, openMods } = ctx
   const [editing, setEditing] = useState(null) // null | 'new' | perfil
   const [importing, setImporting] = useState(false)
+  // Herramientas: { kind: 'optimize' | 'export' | 'import', profile?, picked? }
+  const [tool, setTool] = useState(null)
+  const importProfile = async () => {
+    try {
+      const picked = await call('share:pick')
+      if (picked) setTool({ kind: 'import', picked })
+    } catch (e) { ctx.notify(e.message, 'error') }
+  }
 
   const play = (id) => { setSelected(id); setPage('home'); launch(id) }
 
@@ -19,21 +29,22 @@ export default function Profiles ({ ctx }) {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>Perfiles</h1>
-          <p className="muted">Cada perfil tiene su propia carpeta con mods, mundos y ajustes.</p>
+          <h1>{t('Perfiles')}</h1>
+          <p className="muted">{t('Cada perfil tiene su propia carpeta con mods, mundos y ajustes.')}</p>
         </div>
         <div className="row">
-          <button className="btn" onClick={() => setImporting(true)}><Icon name="package" /> Importar modpack</button>
-          <button className="btn primary" onClick={() => setEditing('new')}><Icon name="plus" /> Nuevo perfil</button>
+          <button className="btn" onClick={importProfile} title={t('Abrir un archivo .ghostprofile exportado desde Ghost Launcher')}><Icon name="upload" /> {t('Importar perfil')}</button>
+          <button className="btn" onClick={() => setImporting(true)}><Icon name="package" /> {t('Importar modpack')}</button>
+          <button className="btn primary" onClick={() => setEditing('new')}><Icon name="plus" /> {t('Nuevo perfil')}</button>
         </div>
       </div>
 
       {profiles.length === 0
         ? (
-          <Empty icon="ghost" title="Crea tu primer perfil" text="Elige una versión de Minecraft, o importa un modpack de Lunar Client o Modrinth.">
+          <Empty icon="ghost" title={t('Crea tu primer perfil')} text={t('Elige una versión de Minecraft, o importa un modpack de Lunar Client o Modrinth.')}>
             <div className="row">
-              <button className="btn" onClick={() => setImporting(true)}><Icon name="package" /> Importar modpack</button>
-              <button className="btn primary" onClick={() => setEditing('new')}><Icon name="plus" /> Nuevo perfil</button>
+              <button className="btn" onClick={() => setImporting(true)}><Icon name="package" /> {t('Importar modpack')}</button>
+              <button className="btn primary" onClick={() => setEditing('new')}><Icon name="plus" /> {t('Nuevo perfil')}</button>
             </div>
           </Empty>
           )
@@ -46,7 +57,7 @@ export default function Profiles ({ ctx }) {
                     {p.iconUrl && <div className="profile-cover-img" style={{ backgroundImage: `url(${p.iconUrl})` }} />}
                   </div>
                   <div className="cover-badges">
-                    {running.includes(p.id) && <span className="cover-badge"><span className="live-dot static" /> Jugando</span>}
+                    {running.includes(p.id) && <span className="cover-badge"><span className="live-dot static" /> {t('Jugando')}</span>}
                     {p.source?.type && <span className="cover-badge right">{p.source.type === 'lunar' ? 'Lunar' : 'Modrinth'}</span>}
                   </div>
                 </div>
@@ -55,19 +66,20 @@ export default function Profiles ({ ctx }) {
                   <div className="profile-card-info">
                     <strong>{p.name}</strong>
                     <small>{p.version} · {loaderLabel(p)}</small>
-                    {p.playTime >= 60 && <small><Icon name="timer" size={12} /> {formatPlayTime(p.playTime)} jugadas</small>}
+                    {p.playTime >= 60 && <small><Icon name="timer" size={12} /> {t('{time} jugadas', { time: formatPlayTime(p.playTime) })}</small>}
                     <small className="muted"><Icon name="clock" size={12} /> {timeAgo(p.lastPlayed)}</small>
                   </div>
                 </div>
                 <div className="profile-card-actions" onClick={e => e.stopPropagation()}>
                   <button className="btn small primary grow" disabled={!!progress || running.includes(p.id)} onClick={() => play(p.id)}>
-                    <Icon name="play" size={14} fill="currentColor" /> {running.includes(p.id) ? 'Abierto' : 'Jugar'}
+                    <Icon name="play" size={14} fill="currentColor" /> {running.includes(p.id) ? t('Abierto') : t('Jugar')}
                   </button>
-                  <button className="btn small" onClick={() => openMods(p.id)} title="Editar los mods de este perfil">
+                  <button className="btn small" onClick={() => openMods(p.id)} title={t('Editar los mods de este perfil')}>
                     <Icon name="puzzle" size={14} /> Mods
                   </button>
-                  <button className="icon-btn" title="Editar perfil" onClick={() => setEditing(p)}><Icon name="edit" size={16} /></button>
-                  <button className="icon-btn" title="Abrir carpeta" onClick={() => call('profiles:openFolder', p.id)}><Icon name="folder" size={16} /></button>
+                  <button className="icon-btn" title={t('Optimizar para tu PC')} onClick={() => setTool({ kind: 'optimize', profile: p })}><Icon name="zap" size={16} /></button>
+                  <button className="icon-btn" title={t('Editar perfil')} onClick={() => setEditing(p)}><Icon name="edit" size={16} /></button>
+                  <button className="icon-btn" title={t('Abrir carpeta')} onClick={() => call('profiles:openFolder', p.id)}><Icon name="folder" size={16} /></button>
                 </div>
               </div>
             ))}
@@ -80,14 +92,18 @@ export default function Profiles ({ ctx }) {
           profile={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onSaved={async (p) => { await refreshProfiles(); if (p) setSelected(p.id); setEditing(null) }}
+          onTool={(kind) => { const p = editing; setEditing(null); setTool({ kind, profile: p }) }}
         />
       )}
+      {tool?.kind === 'optimize' && <OptimizeModal ctx={ctx} profile={tool.profile} onClose={() => setTool(null)} />}
+      {tool?.kind === 'export' && <ExportModal ctx={ctx} profile={tool.profile} onClose={() => setTool(null)} />}
+      {tool?.kind === 'import' && <ImportProfileModal ctx={ctx} picked={tool.picked} onClose={() => setTool(null)} />}
       {importing && <ImportModal ctx={ctx} onClose={() => setImporting(false)} />}
     </div>
   )
 }
 
-function ProfileModal ({ ctx, profile, onClose, onSaved }) {
+function ProfileModal ({ ctx, profile, onClose, onSaved, onTool }) {
   const { settings, system, notify, openMods } = ctx
   const [versions, setVersions] = useState(null)
   const [fabricVersions, setFabricVersions] = useState([])
@@ -116,7 +132,7 @@ function ProfileModal ({ ctx, profile, onClose, onSaved }) {
     call('versions:list').then(v => {
       setVersions(v)
       if (!profile) setForm(f => ({ ...f, version: f.version || v.latest.release }))
-    }).catch(e => notify(`No se pudo cargar la lista de versiones: ${e.message}`, 'error'))
+    }).catch(e => notify(t('No se pudo cargar la lista de versiones: {error}', { error: e.message }), 'error'))
     call('versions:fabric').then(setFabricVersions).catch(() => {})
   }, [])
 
@@ -127,12 +143,12 @@ function ProfileModal ({ ctx, profile, onClose, onSaved }) {
   const choosePhoto = async () => {
     const file = await pickImage()
     if (!file) return
-    try { setIcon(await toSquarePng(file)) } catch { notify('No se pudo leer esa imagen', 'error') }
+    try { setIcon(await toSquarePng(file)) } catch { notify(t('No se pudo leer esa imagen'), 'error') }
   }
 
   const save = async () => {
     if (!form.version) return
-    if (form.loader === 'fabric' && fabricVersions.length && !fabricOk) return notify(`Fabric no está disponible para ${form.version}`, 'error')
+    if (form.loader === 'fabric' && fabricVersions.length && !fabricOk) return notify(t('Fabric no está disponible para {version}', { version: form.version }), 'error')
     const data = {
       name: form.name.trim() || `${form.loader === 'fabric' ? 'Fabric' : 'Minecraft'} ${form.version}`,
       version: form.version,
@@ -151,11 +167,11 @@ function ProfileModal ({ ctx, profile, onClose, onSaved }) {
         ...(withCapes ? ['capes'] : [])
       ]
       if (!profile && data.loader === 'fabric' && slugs.length) {
-        setInstalling({ stage: 'Preparando mods integrados…', current: 0, total: 0 })
+        setInstalling({ stage: t('Preparando mods integrados…'), current: 0, total: 0 })
         const r = await call('builtins:apply', saved.id, slugs)
-        notify(`Perfil creado con ${r.installed.length} mods${r.skipped.length ? ` (no disponibles para ${data.version}: ${r.skipped.join(', ')})` : ''}`)
+        notify(t('Perfil creado con {n} mods', { n: r.installed.length }) + (r.skipped.length ? ' ' + t('(no disponibles para {version}: {list})', { version: data.version, list: r.skipped.join(', ') }) : ''))
       } else {
-        notify(profile ? 'Perfil guardado' : 'Perfil creado')
+        notify(profile ? t('Perfil guardado') : t('Perfil creado'))
       }
       onSaved(saved)
     } catch (e) {
@@ -166,7 +182,7 @@ function ProfileModal ({ ctx, profile, onClose, onSaved }) {
 
   const remove = async () => {
     await call('profiles:remove', profile.id, true)
-    notify('Perfil eliminado')
+    notify(t('Perfil eliminado'))
     onSaved(null)
   }
 
@@ -175,30 +191,30 @@ function ProfileModal ({ ctx, profile, onClose, onSaved }) {
   }
 
   return (
-    <Modal title={profile ? 'Editar perfil' : 'Nuevo perfil'} onClose={() => !installing && onClose()} wide
+    <Modal title={profile ? t('Editar perfil') : t('Nuevo perfil')} onClose={() => !installing && onClose()} wide
       footer={installing
         ? <div className="footer-progress"><ProgressBar progress={installing} /></div>
         : <>
           {profile && (confirmDelete
-            ? <button className="btn danger" onClick={remove}><Icon name="trash" /> Borrar también mundos y mods</button>
-            : <button className="btn ghost danger-text" onClick={() => setConfirmDelete(true)}><Icon name="trash" /> Eliminar</button>)}
+            ? <button className="btn danger" onClick={remove}><Icon name="trash" /> {t('Borrar también mundos y mods')}</button>
+            : <button className="btn ghost danger-text" onClick={() => setConfirmDelete(true)}><Icon name="trash" /> {t('Eliminar')}</button>)}
           <div className="spacer" />
-          <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" onClick={save} disabled={!form.version}>{profile ? 'Guardar' : 'Crear perfil'}</button>
+          <button className="btn ghost" onClick={onClose}>{t('Cancelar')}</button>
+          <button className="btn primary" onClick={save} disabled={!form.version}>{profile ? t('Guardar') : t('Crear perfil')}</button>
         </>}>
       {!profile && <ModeSwitch mode="new" onChange={setMode} disabled={!!installing} />}
       <div className="identity">
-        <button className="photo-picker" onClick={choosePhoto} title="Cambiar foto">
+        <button className="photo-picker" onClick={choosePhoto} title={t('Cambiar foto')}>
           <ProfileBadge profile={{ ...form, name: form.name || (form.loader === 'fabric' ? 'Fabric' : 'Minecraft') }} src={preview} size={96} />
           <span className="photo-overlay"><Icon name="image" size={22} /></span>
         </button>
         <div className="identity-fields">
-          <Field label="Nombre">
+          <Field label={t('Nombre')}>
             <input value={form.name} placeholder={`Minecraft ${form.version || ''}`} onChange={e => set('name', e.target.value)} />
           </Field>
           <div className="row">
-            <button className="btn small" onClick={choosePhoto}><Icon name="image" size={14} /> {preview ? 'Cambiar foto' : 'Añadir foto'}</button>
-            {preview && <button className="btn small ghost" onClick={() => setIcon(null)}>Quitar foto</button>}
+            <button className="btn small" onClick={choosePhoto}><Icon name="image" size={14} /> {preview ? t('Cambiar foto') : t('Añadir foto')}</button>
+            {preview && <button className="btn small ghost" onClick={() => setIcon(null)}>{t('Quitar foto')}</button>}
             <div className="colors compact">
               {COLORS.map(c => (
                 <button key={c} className={`color ${form.color === c ? 'active' : ''}`} style={{ background: c }} onClick={() => set('color', c)} aria-label={`Color ${c}`} />
@@ -209,64 +225,79 @@ function ProfileModal ({ ctx, profile, onClose, onSaved }) {
       </div>
 
       <div className="form-grid">
-        <Field label="Versión de Minecraft">
+        <Field label={t('Versión de Minecraft')}>
           <select value={form.version} onChange={e => set('version', e.target.value)} disabled={!versions}>
-            {!versions && <option>Cargando…</option>}
+            {!versions && <option>{t('Cargando…')}</option>}
             {list.map(v => <option key={v.id} value={v.id}>{v.id}{v.type === 'snapshot' ? ' (snapshot)' : ''}</option>)}
           </select>
         </Field>
-        <Field label="Tipo" hint={form.loader === 'fabric' && fabricVersions.length && !fabricOk ? 'Fabric no existe para esta versión' : 'Fabric permite instalar mods'}>
+        <Field label={t('Tipo')} hint={form.loader === 'fabric' && fabricVersions.length && !fabricOk ? t('Fabric no existe para esta versión') : t('Fabric permite instalar mods')}>
           <div className="segmented">
             <button className={form.loader === 'vanilla' ? 'active' : ''} onClick={() => set('loader', 'vanilla')}>Vanilla</button>
-            <button className={form.loader === 'fabric' ? 'active' : ''} onClick={() => set('loader', 'fabric')}>Fabric (mods)</button>
+            <button className={form.loader === 'fabric' ? 'active' : ''} onClick={() => set('loader', 'fabric')}>{t('Fabric (mods)')}</button>
           </div>
         </Field>
       </div>
 
-      <Toggle checked={showSnapshots} onChange={setShowSnapshots} label="Mostrar snapshots" hint="Versiones de prueba de Mojang" />
+      <Toggle checked={showSnapshots} onChange={setShowSnapshots} label={t('Mostrar snapshots')} hint={t('Versiones de prueba de Mojang')} />
 
       {!profile && (
         <div className={`builtin-box ${form.loader !== 'fabric' ? 'off' : ''}`}>
           <div className="builtin-box-head">
             <img src={ghostLogo} alt="" />
             <div>
-              <strong>Mods integrados</strong>
-              <small>{form.loader === 'fabric' ? 'Las funciones de un cliente PvP, listas desde el primer momento' : 'Necesitan Fabric: cambia el tipo a "Fabric (mods)"'}</small>
+              <strong>{t('Mods integrados')}</strong>
+              <small>{form.loader === 'fabric' ? t('Las funciones de un cliente PvP, listas desde el primer momento') : t('Necesitan Fabric: cambia el tipo a "Fabric (mods)"')}</small>
             </div>
           </div>
           <Toggle checked={withBuiltins && form.loader === 'fabric'} onChange={setWithBuiltins}
-            label={`Mods de Ghost (${catalog ? catalog.enabled.length : '…'})`}
-            hint="HUD (FPS, CPS, keystrokes…), zoom, freelook, minimapa, shaders, rendimiento… Elige cuáles en Ajustes." />
+            label={t('Mods de Ghost ({n})', { n: catalog ? catalog.enabled.length : '…' })}
+            hint={t('HUD (FPS, CPS, keystrokes…), zoom, freelook, minimapa, shaders, rendimiento… Elige cuáles en Ajustes.')} />
           <Toggle checked={withCapes && form.loader === 'fabric'} onChange={setWithCapes}
-            label="Capes" hint="Muestra capas de OptiFine, MinecraftCapes, Cosmetica y más" />
+            label="Capes" hint={t('Muestra capas de OptiFine, MinecraftCapes, Cosmetica y más')} />
         </div>
       )}
 
       {profile && profile.loader === 'fabric' && (
         <button className="link-card" onClick={() => { onClose(); openMods(profile.id) }}>
           <Icon name="puzzle" />
-          <div><strong>Gestionar mods de este perfil</strong><small>Añadir, quitar, activar o desactivar</small></div>
+          <div><strong>{t('Gestionar mods de este perfil')}</strong><small>{t('Añadir, quitar, activar o desactivar')}</small></div>
           <Icon name="back" className="flip" />
         </button>
+      )}
+
+      {profile && (
+        <div className="tool-cards">
+          <button className="link-card" onClick={() => onTool('optimize')}>
+            <Icon name="zap" />
+            <div><strong>{t('Optimizar para tu PC')}</strong><small>{t('RAM, ajustes de vídeo y mods de rendimiento según tu equipo')}</small></div>
+            <Icon name="back" className="flip" />
+          </button>
+          <button className="link-card" onClick={() => onTool('export')}>
+            <Icon name="download" />
+            <div><strong>{t('Exportar perfil')}</strong><small>{t('Un archivo para pasarlo a otro PC o a un amigo')}</small></div>
+            <Icon name="back" className="flip" />
+          </button>
+        </div>
       )}
 
       {profile && <ModrinthHours ctx={ctx} profile={profile} />}
 
       <div className="divider" />
-      <h3 className="sub">Rendimiento</h3>
-      <Toggle checked={form.customRam} onChange={v => set('customRam', v)} label="RAM propia para este perfil"
-        hint={form.customRam ? null : `Usa la de Ajustes (${(settings.maxRam / 1024).toFixed(1)} GB)`} />
+      <h3 className="sub">{t('Rendimiento')}</h3>
+      <Toggle checked={form.customRam} onChange={v => set('customRam', v)} label={t('RAM propia para este perfil')}
+        hint={form.customRam ? null : t('Usa la de Ajustes ({gb} GB)', { gb: (settings.maxRam / 1024).toFixed(1) })} />
       {form.customRam && <RamSlider value={form.ramMax} onChange={v => set('ramMax', v)} totalRam={system?.totalRam} />}
 
       <div className="form-grid">
-        <Field label="Resolución de la ventana" hint="Déjalo vacío para la de por defecto">
+        <Field label={t('Resolución de la ventana')} hint={t('Déjalo vacío para la de por defecto')}>
           <div className="res">
-            <input type="number" placeholder="Ancho" value={form.width} onChange={e => set('width', e.target.value)} />
+            <input type="number" placeholder={t('Ancho')} value={form.width} onChange={e => set('width', e.target.value)} />
             <span>×</span>
-            <input type="number" placeholder="Alto" value={form.height} onChange={e => set('height', e.target.value)} />
+            <input type="number" placeholder={t('Alto')} value={form.height} onChange={e => set('height', e.target.value)} />
           </div>
         </Field>
-        <Field label="Argumentos de Java" hint="Se añaden a los de Ajustes">
+        <Field label={t('Argumentos de Java')} hint={t('Se añaden a los de Ajustes')}>
           <input value={form.jvmArgs} placeholder="-XX:+UseG1GC" onChange={e => set('jvmArgs', e.target.value)} />
         </Field>
       </div>
@@ -287,8 +318,8 @@ function ImportModal ({ ctx, onClose }) {
     await refreshProfiles()
     setSelected(result.profile.id)
     const extra = result.builtins?.installed?.length
-    notify(`"${result.profile.name}" importado${extra ? ` con ${extra} mods integrados añadidos` : ''}`)
-    for (const m of result.medals || []) notify(`¡Medalla de ${m.hours} horas para «${m.profileName}» con las horas de Modrinth!`, 'medal', { medal: m.hours })
+    notify(extra ? t('"{name}" importado con {n} mods integrados añadidos', { name: result.profile.name, n: extra }) : t('"{name}" importado', { name: result.profile.name }))
+    for (const m of result.medals || []) notify(t('¡Medalla de {h} horas para «{name}» con las horas de Modrinth!', { h: m.hours, name: m.profileName }), 'medal', { medal: m.hours })
     onClose()
     openMods(result.profile.id)
   }
@@ -301,7 +332,7 @@ function ImportModal ({ ctx, onClose }) {
   }
 
   return (
-    <Modal title="Importar modpack" onClose={() => !busy && onClose()} wide>
+    <Modal title={t('Importar modpack')} onClose={() => !busy && onClose()} wide>
       <div className="tabs">
         <button className={tab === 'modrinth' ? 'active' : ''} onClick={() => setTab('modrinth')} disabled={!!busy}>Modrinth</button>
         <button className={tab === 'lunar' ? 'active' : ''} onClick={() => setTab('lunar')} disabled={!!busy}>Lunar Client</button>
@@ -320,11 +351,11 @@ function ModrinthPacks ({ busy, run, notify }) {
   const [results, setResults] = useState(null)
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       call('content:search', { query, type: 'modpack', loader: 'fabric', sort: query ? 'relevance' : 'downloads' })
-        .then(r => setResults(r.hits)).catch(e => notify(`Modrinth no responde: ${e.message}`, 'error'))
+        .then(r => setResults(r.hits)).catch(e => notify(t('Modrinth no responde: {error}', { error: e.message }), 'error'))
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [query])
 
   const fromFile = async () => {
@@ -337,20 +368,20 @@ function ModrinthPacks ({ busy, run, notify }) {
       <div className="browse-bar">
         <div className="search">
           <Icon name="search" />
-          <input value={query} placeholder="Buscar modpacks de Fabric…" onChange={e => setQuery(e.target.value)} />
+          <input value={query} placeholder={t('Buscar modpacks de Fabric…')} onChange={e => setQuery(e.target.value)} />
         </div>
-        <button className="btn" onClick={fromFile} disabled={!!busy}><Icon name="archive" /> {busy === 'file' ? 'Importando…' : 'Abrir .mrpack'}</button>
+        <button className="btn" onClick={fromFile} disabled={!!busy}><Icon name="archive" /> {busy === 'file' ? t('Importando…') : t('Abrir .mrpack')}</button>
       </div>
       <div className="results compact">
         {results?.map(hit => (
           <div key={hit.project_id} className="result">
             {hit.icon_url ? <img className="item-icon" src={hit.icon_url} alt="" /> : <div className="item-icon placeholder"><Icon name="package" /></div>}
             <div className="result-text">
-              <div className="result-title"><strong>{hit.title}</strong><small className="muted">por {hit.author}</small></div>
+              <div className="result-title"><strong>{hit.title}</strong><small className="muted">{t('por {author}', { author: hit.author })}</small></div>
               <p>{hit.description}</p>
             </div>
             <button className="btn small primary" disabled={!!busy} onClick={() => run(hit.project_id, () => call('modpacks:installModrinth', hit.project_id))}>
-              <Icon name="download" size={14} /> {busy === hit.project_id ? 'Instalando…' : 'Instalar'}
+              <Icon name="download" size={14} /> {busy === hit.project_id ? t('Instalando…') : t('Instalar')}
             </button>
           </div>
         ))}
@@ -374,12 +405,12 @@ function LunarPacks ({ busy, run }) {
   }, [])
 
   if (!data) return <div className="center"><div className="spinner" /></div>
-  if (!data.found) return <Empty icon="search" title="No se encontró Lunar Client" text="Busqué en la carpeta .lunarclient de tu usuario y no hay perfiles." />
+  if (!data.found) return <Empty icon="search" title={t('No se encontró Lunar Client')} text={t('Busqué en la carpeta .lunarclient de tu usuario y no hay perfiles.')} />
 
   return (
     <div className="import-pane">
-      <p className="muted small-text">Se copian los mods, su configuración, las texturas, los shaders, los servidores y <strong>tus ajustes de Minecraft</strong> (teclas, sensibilidad, FOV, interfaz…). Tu perfil de Lunar no se modifica.</p>
-      <Toggle checked={copySaves} onChange={setCopySaves} label="Copiar también los mundos" hint="Puede tardar si tienes mundos grandes" />
+      <p className="muted small-text">{t('Se copian los mods, su configuración, las texturas, los shaders, los servidores y tus ajustes de Minecraft (teclas, sensibilidad, FOV, interfaz…). Tu perfil de Lunar no se modifica.')}</p>
+      <Toggle checked={copySaves} onChange={setCopySaves} label={t('Copiar también los mundos')} hint={t('Puede tardar si tienes mundos grandes')} />
       <div className="results compact">
         {data.profiles.map(p => (
           <div key={p.folder} className="result">
@@ -387,18 +418,18 @@ function LunarPacks ({ busy, run }) {
             <div className="result-text">
               <strong>{p.name}</strong>
               <small className="muted">
-                {p.mods ? `${p.mods} mods · Fabric` : 'Sin mods · Vanilla'}
-                {p.resourcepacks ? ` · ${p.resourcepacks} texturas` : ''}
-                {p.saves ? ` · ${p.saves} mundos` : ''}
+                {p.mods ? `${p.mods} mods · Fabric` : t('Sin mods · Vanilla')}
+                {p.resourcepacks ? ' · ' + t('{n} texturas', { n: p.resourcepacks }) : ''}
+                {p.saves ? ' · ' + t('{n} mundos', { n: p.saves }) : ''}
               </small>
             </div>
-            <select className="version-select" value={choices[p.folder] || ''} onChange={e => setChoices(c => ({ ...c, [p.folder]: e.target.value }))} aria-label="Versión">
-              {!choices[p.folder] && <option value="">Elige versión</option>}
+            <select className="version-select" value={choices[p.folder] || ''} onChange={e => setChoices(c => ({ ...c, [p.folder]: e.target.value }))} aria-label={t('Versión')}>
+              {!choices[p.folder] && <option value="">{t('Elige versión')}</option>}
               {releases.map(v => <option key={v} value={v}>{v}</option>)}
             </select>
             <button className="btn small primary" disabled={!!busy || !choices[p.folder]}
               onClick={() => run(p.folder, () => call('modpacks:importLunar', p.folder, { version: choices[p.folder], copySaves }))}>
-              <Icon name="download" size={14} /> {busy === p.folder ? 'Importando…' : 'Importar'}
+              <Icon name="download" size={14} /> {busy === p.folder ? t('Importando…') : t('Importar')}
             </button>
           </div>
         ))}
@@ -414,12 +445,12 @@ function ModrinthAppPacks ({ busy, run }) {
   useEffect(() => { call('modrinthApp:list').then(setData).catch(() => setData({ found: false, instances: [] })) }, [])
 
   if (!data) return <div className="center"><div className="spinner" /></div>
-  if (!data.found) return <Empty icon="search" title="No se encontró la app de Modrinth" text="Si la tienes instalada en este PC, ábrela una vez y vuelve a intentarlo." />
+  if (!data.found) return <Empty icon="search" title={t('No se encontró la app de Modrinth')} text={t('Si la tienes instalada en este PC, ábrela una vez y vuelve a intentarlo.')} />
 
   return (
     <div className="import-pane">
-      <p className="muted small-text">Se copian los mods, su configuración, las texturas, los shaders, los servidores y <strong>tus ajustes de Minecraft</strong> (teclas, sensibilidad, FOV, interfaz…), y <strong>también las horas jugadas</strong>. Las cachés (como la de Voxy) no se copian. La app de Modrinth no se modifica.</p>
-      <Toggle checked={copySaves} onChange={setCopySaves} label="Copiar también mundos, repeticiones, copias de seguridad y capturas" hint="Pueden ocupar varios GB y tardar un rato" />
+      <p className="muted small-text">{t('Se copian los mods, su configuración, las texturas, los shaders, los servidores, tus ajustes de Minecraft (teclas, sensibilidad, FOV, interfaz…) y también las horas jugadas. Las cachés (como la de Voxy) no se copian. La app de Modrinth no se modifica.')}</p>
+      <Toggle checked={copySaves} onChange={setCopySaves} label={t('Copiar también mundos, repeticiones, copias de seguridad y capturas')} hint={t('Pueden ocupar varios GB y tardar un rato')} />
       <div className="results compact">
         {data.instances.map(i => {
           const supported = ['fabric', 'vanilla'].includes(i.loader)
@@ -433,9 +464,9 @@ function ModrinthAppPacks ({ busy, run }) {
                 </small>
               </div>
               <button className="btn small primary" disabled={!!busy || !supported || !i.exists}
-                title={!supported ? 'De momento solo Fabric y Vanilla' : ''}
+                title={!supported ? t('De momento solo Fabric y Vanilla') : ''}
                 onClick={() => run(i.id, () => call('modrinthApp:import', i.id, { copySaves }))}>
-                <Icon name="download" size={14} /> {busy === i.id ? 'Importando…' : 'Importar'}
+                <Icon name="download" size={14} /> {busy === i.id ? t('Importando…') : t('Importar')}
               </button>
             </div>
           )
@@ -469,8 +500,8 @@ function ModrinthHours ({ ctx, profile }) {
   const add = async () => {
     try {
       const r = await call('modrinthApp:addHours', profile.id, choice)
-      notify(`Sumadas ${formatPlayTime(r.seconds)} de Modrinth a «${profile.name}»`)
-      for (const m of r.medals || []) notify(`¡Medalla de ${m.hours} horas para «${m.profileName}»!`, 'medal', { medal: m.hours })
+      notify(t('Sumadas {time} de Modrinth a «{name}»', { time: formatPlayTime(r.seconds), name: profile.name }))
+      for (const m of r.medals || []) notify(t('¡Medalla de {h} horas para «{name}»!', { h: m.hours, name: m.profileName }), 'medal', { medal: m.hours })
       setUsed(u => new Set([...u, choice]))
       refreshProfiles()
     } catch (e) { notify(e.message, 'error') }
@@ -479,15 +510,15 @@ function ModrinthHours ({ ctx, profile }) {
   return (
     <div className="mr-hours">
       <div className="mr-hours-text">
-        <strong><Icon name="timer" size={14} /> Horas de Modrinth App</strong>
-        <small className="muted">Suma a este perfil las horas que jugaste en una instancia de Modrinth (cuentan para las medallas).</small>
+        <strong><Icon name="timer" size={14} /> {t('Horas de Modrinth App')}</strong>
+        <small className="muted">{t('Suma a este perfil las horas que jugaste en una instancia de Modrinth (cuentan para las medallas).')}</small>
       </div>
       <div className="row">
-        <select value={choice} onChange={e => setChoice(e.target.value)} aria-label="Instancia de Modrinth">
-          <option value="">Elige instancia…</option>
-          {options.map(i => <option key={i.id} value={i.id}>{i.name} — {formatPlayTime(i.seconds)}{used.has(i.id) ? ' (ya sumadas)' : ''}</option>)}
+        <select value={choice} onChange={e => setChoice(e.target.value)} aria-label={t('Instancia de Modrinth')}>
+          <option value="">{t('Elige instancia…')}</option>
+          {options.map(i => <option key={i.id} value={i.id}>{i.name} — {formatPlayTime(i.seconds)}{used.has(i.id) ? ' ' + t('(ya sumadas)') : ''}</option>)}
         </select>
-        <button className="btn small primary" disabled={!choice || already} onClick={add}>{already ? 'Ya sumadas' : 'Sumar horas'}</button>
+        <button className="btn small primary" disabled={!choice || already} onClick={add}>{already ? t('Ya sumadas') : t('Sumar horas')}</button>
       </div>
     </div>
   )

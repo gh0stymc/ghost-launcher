@@ -1,4 +1,5 @@
 import React from 'react'
+import { t } from '../i18n.js'
 import { Icon } from './Icon.jsx'
 
 // Si una sección falla, se muestra un aviso solo en esa sección en vez de dejar la ventana en negro
@@ -27,10 +28,10 @@ export default class ErrorBoundary extends React.Component {
       <div className="page">
         <div className="empty">
           <div className="empty-icon"><Icon name="alert" size={28} /></div>
-          <h3>Algo ha fallado en esta sección</h3>
-          <p>El resto del launcher sigue funcionando. Prueba otra sección o vuelve a abrir esta.</p>
+          <h3>{t('Algo ha fallado en esta sección')}</h3>
+          <p>{t('El resto del launcher sigue funcionando. Prueba otra sección o vuelve a abrir esta.')}</p>
           <code className="error-detail">{String(this.state.error?.message || this.state.error)}</code>
-          <button className="btn" onClick={() => this.setState({ error: null })}><Icon name="refresh" /> Reintentar</button>
+          <button className="btn" onClick={() => this.setState({ error: null })}><Icon name="refresh" /> {t('Reintentar')}</button>
         </div>
       </div>
     )

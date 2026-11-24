@@ -7,6 +7,7 @@ const paths = require('./paths')
 const profiles = require('./profiles')
 const modrinth = require('./modrinth')
 const { copyEntries } = require('./copytree')
+const { t } = require('./i18n')
 
 // Carpeta de datos de la app de Modrinth según el sistema
 function dataDir () {
@@ -91,10 +92,10 @@ const HEAVY = new Set(['saves', 'flashback', 'replay_recordings', 'backups', 'sc
 
 async function importInstance (id, { copySaves } = {}, onProgress = () => {}) {
   const inst = list().instances.find(i => i.id === id)
-  if (!inst) throw new Error('No encuentro esa instancia de Modrinth')
-  if (!inst.exists) throw new Error('La carpeta de esa instancia ya no existe')
+  if (!inst) throw new Error(t('No encuentro esa instancia de Modrinth'))
+  if (!inst.exists) throw new Error(t('La carpeta de esa instancia ya no existe'))
   if (!['fabric', 'vanilla'].includes(inst.loader)) {
-    throw new Error(`Esa instancia usa ${inst.loader}. ghost launcher de momento solo es compatible con Fabric.`)
+    throw new Error(t('Esa instancia usa {loader}. ghost launcher de momento solo es compatible con Fabric.', { loader: inst.loader }))
   }
 
   const profile = profiles.create({
@@ -106,11 +107,11 @@ async function importInstance (id, { copySaves } = {}, onProgress = () => {}) {
     // Todo lo de la instancia (mods, config, texturas, shaders y los ajustes de Minecraft: options.txt
     // con teclas, sensibilidad, FOV...), en segundo plano para no congelar el launcher
     const entries = fs.readdirSync(inst.folder).filter(e => !CACHES.has(e) && (copySaves || !HEAVY.has(e)))
-    await copyEntries(inst.folder, dest, entries, onProgress, 'Copiando la instancia')
+    await copyEntries(inst.folder, dest, entries, onProgress, t('Copiando la instancia'))
     // Las horas jugadas en Modrinth pasan al perfil
     profiles.update(profile.id, { playTime: inst.seconds, lastPlayed: inst.lastPlayed, hoursFrom: [id], importing: false })
 
-    onProgress({ stage: 'Reconociendo mods', current: 0, total: 0 })
+    onProgress({ stage: t('Reconociendo mods'), current: 0, total: 0 })
     await modrinth.identify(profile.id).catch(() => {})
 
     const icon = inst.iconPath
@@ -126,11 +127,11 @@ async function importInstance (id, { copySaves } = {}, onProgress = () => {}) {
 // Suma a un perfil que ya existe las horas de una instancia de Modrinth (solo una vez por instancia)
 function addHours (profileId, id) {
   const inst = list().instances.find(i => i.id === id)
-  if (!inst) throw new Error('No encuentro esa instancia de Modrinth')
+  if (!inst) throw new Error(t('No encuentro esa instancia de Modrinth'))
   const p = profiles.list().find(x => x.id === profileId)
-  if (!p) throw new Error('Perfil no encontrado')
+  if (!p) throw new Error(t('Perfil no encontrado'))
   const used = new Set(profiles.list().flatMap(x => x.hoursFrom || []))
-  if (used.has(id)) throw new Error('Las horas de esa instancia ya se sumaron a un perfil')
+  if (used.has(id)) throw new Error(t('Las horas de esa instancia ya se sumaron a un perfil'))
   profiles.update(profileId, {
     playTime: (p.playTime || 0) + inst.seconds,
     lastPlayed: Math.max(p.lastPlayed || 0, inst.lastPlayed || 0) || null,

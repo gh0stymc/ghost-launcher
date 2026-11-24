@@ -3,6 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const paths = require('./paths')
 const { getJson, download } = require('./http')
+const { t } = require('./i18n')
 
 const MANIFEST = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
 
@@ -26,7 +27,7 @@ async function fabricGet (pathname) {
       lastError = e
     }
   }
-  throw new Error(`No se puede conectar con Fabric (${lastError?.message})`)
+  throw new Error(t('No se puede conectar con Fabric ({message})', { message: lastError?.message }))
 }
 
 // Descarga nosotros las librerías de Fabric probando varios servidores.
@@ -38,7 +39,7 @@ async function prefetchFabricLibraries (json, onProgress = () => {}) {
     const [group, artifact, version] = lib.name.split(':')
     const rel = `${group.replace(/\./g, '/')}/${artifact}/${version}/${artifact}-${version}.jar`
     const dest = path.join(paths.root(), 'libraries', ...rel.split('/'))
-    onProgress({ stage: 'Descargando librerías de Fabric', current: ++n, total: libs.length })
+    onProgress({ stage: t('Descargando librerías de Fabric'), current: ++n, total: libs.length })
     if (fs.existsSync(dest)) continue
     const hosts = lib.url && lib.url.includes('fabricmc.net') ? [...FABRIC_MAVEN] : [lib.url || MAVEN_CENTRAL]
     if (!group.startsWith('net.fabricmc')) hosts.push(MAVEN_CENTRAL)
@@ -50,7 +51,7 @@ async function prefetchFabricLibraries (json, onProgress = () => {}) {
         break
       } catch { /* probamos el siguiente servidor */ }
     }
-    if (!ok) throw new Error(`No se pudo descargar ${lib.name}`)
+    if (!ok) throw new Error(t('No se pudo descargar {name}', { name: lib.name }))
   }
 }
 
@@ -84,7 +85,7 @@ async function versionJson (id) {
   const file = path.join(paths.root(), 'versions', id, `${id}.json`)
   if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'))
   const entry = (await manifest()).versions.find(v => v.id === id)
-  if (!entry) throw new Error(`La versión ${id} no existe`)
+  if (!entry) throw new Error(t('La versión {id} no existe', { id: id }))
   const json = await getJson(entry.url)
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, JSON.stringify(json))
@@ -103,7 +104,7 @@ async function fabricGameVersions () {
 
 async function fabricLatestLoader (gameVersion) {
   const list = await fabricGet(`/versions/loader/${encodeURIComponent(gameVersion)}`)
-  if (!list.length) throw new Error(`Fabric no está disponible para ${gameVersion}`)
+  if (!list.length) throw new Error(t('Fabric no está disponible para {gameVersion}', { gameVersion: gameVersion }))
   return (list.find(l => l.loader.stable) || list[0]).loader.version
 }
 

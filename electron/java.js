@@ -6,6 +6,7 @@ const { execFile } = require('child_process')
 const { promisify } = require('util')
 const paths = require('./paths')
 const { getJson, download } = require('./http')
+const { t } = require('./i18n')
 
 const run = promisify(execFile)
 
@@ -32,7 +33,7 @@ async function latestPackage (major) {
     const list = await getJson(url).catch(() => [])
     if (list.length) return list[0].binary.package
   }
-  throw new Error(`No se encontró Java ${major} para este sistema`)
+  throw new Error(t('No se encontró Java {major} para este sistema', { major: major }))
 }
 
 async function ensureJava (major, onProgress = () => {}) {
@@ -40,15 +41,15 @@ async function ensureJava (major, onProgress = () => {}) {
   const existing = findJava(dir)
   if (existing) return existing
 
-  onProgress({ stage: `Descargando Java ${major}`, current: 0, total: 1 })
+  onProgress({ stage: t('Descargando Java {major}', { major: major }), current: 0, total: 1 })
   const pkg = await latestPackage(major)
   const archive = path.join(paths.java(), pkg.name)
   await download(pkg.link, archive, {
     sha256: pkg.checksum,
-    onProgress: (done, total) => onProgress({ stage: `Descargando Java ${major}`, current: done, total: total || pkg.size })
+    onProgress: (done, total) => onProgress({ stage: t('Descargando Java {major}', { major: major }), current: done, total: total || pkg.size })
   })
 
-  onProgress({ stage: `Instalando Java ${major}`, current: 0, total: 0 })
+  onProgress({ stage: t('Instalando Java {major}', { major: major }), current: 0, total: 0 })
   fs.rmSync(dir, { recursive: true, force: true })
   fs.mkdirSync(dir, { recursive: true })
   // "tar" viene incluido en Windows 10+, macOS y Linux, y abre tanto .zip como .tar.gz
@@ -58,7 +59,7 @@ async function ensureJava (major, onProgress = () => {}) {
   fs.rmSync(archive, { force: true })
 
   const java = findJava(dir)
-  if (!java) throw new Error(`No se pudo instalar Java ${major}`)
+  if (!java) throw new Error(t('No se pudo instalar Java {major}', { major: major }))
   return java
 }
 

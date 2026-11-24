@@ -3,6 +3,7 @@ const path = require('path')
 const crypto = require('crypto')
 const { Readable } = require('stream')
 const { pipeline } = require('stream/promises')
+const { t } = require('./i18n')
 
 const UA = 'ghost-launcher/1.0'
 
@@ -13,9 +14,9 @@ async function getJson (url, tries = 3) {
   for (let i = 1; ; i++) {
     try {
       const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(20000) })
-      if (res.status >= 500 || res.status === 429) throw new Error(`HTTP ${res.status} en ${url}`)
+      if (res.status >= 500 || res.status === 429) throw new Error(t('HTTP {status} en {url}', { status: res.status, url: url }))
       if (!res.ok) {
-        const err = new Error(`HTTP ${res.status} en ${url}`)
+        const err = new Error(t('HTTP {status} en {url}', { status: res.status, url: url }))
         err.final = true
         throw err
       }
@@ -38,7 +39,7 @@ function sha1Of (file) {
 async function download (url, dest, { onProgress, sha1, sha256 } = {}) {
   fs.mkdirSync(path.dirname(dest), { recursive: true })
   const res = await fetch(url, { headers: { 'User-Agent': UA } })
-  if (!res.ok) throw new Error(`HTTP ${res.status} descargando ${url}`)
+  if (!res.ok) throw new Error(t('HTTP {status} descargando {url}', { status: res.status, url: url }))
   const total = Number(res.headers.get('content-length')) || 0
   let done = 0
   const hash = sha256 ? crypto.createHash('sha256') : sha1 ? crypto.createHash('sha1') : null
@@ -55,7 +56,7 @@ async function download (url, dest, { onProgress, sha1, sha256 } = {}) {
     const want = (sha256 || sha1).toLowerCase()
     if (got !== want) {
       fs.rmSync(tmp, { force: true })
-      throw new Error(`El archivo descargado está corrupto (${path.basename(dest)})`)
+      throw new Error(t('El archivo descargado está corrupto ({x})', { x: path.basename(dest) }))
     }
   }
   fs.renameSync(tmp, dest)

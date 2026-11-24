@@ -6,6 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const { app } = require('electron')
 const paths = require('./paths')
+const { t } = require('./i18n')
 
 const defaultDir = () => app.isPackaged
   ? path.join(process.resourcesPath, 'loading-screen')
@@ -32,7 +33,7 @@ function frame (i, dataUrl) {
 }
 function finish (meta) {
   const files = fs.readdirSync(tmpDir()).filter(f => f.startsWith('frame_')).sort()
-  if (!files.length) throw new Error('No se pudo sacar ninguna imagen del archivo')
+  if (!files.length) throw new Error(t('No se pudo sacar ninguna imagen del archivo'))
   fs.writeFileSync(path.join(tmpDir(), 'info.json'), JSON.stringify({ ...meta, frames: files.length, files, loop: true, created: Date.now() }, null, 2))
   fs.rmSync(customDir(), { recursive: true, force: true })
   fs.renameSync(tmpDir(), customDir())

@@ -3,6 +3,7 @@
 // que dan las mismas funciones. Se instalan en cada perfil nuevo con Fabric.
 const modrinth = require('./modrinth')
 const store = require('./store')
+const { t } = require('./i18n')
 
 // lunar: qué funciones de Lunar cubre cada mod
 const BUILTINS = [
@@ -54,7 +55,9 @@ function catalog () {
   // (AxolotlClient fue sustituido por ghost client)
   const enabled = (s.builtins || BUILTINS.filter(b => b.default).map(b => b.slug))
     .map(slug => (slug === 'axolotlclient' ? 'ghost-client' : slug))
-  return { mods: BUILTINS, enabled, capes: { ...CAPES, enabled: s.capesByDefault !== false } }
+  // Categorías y descripciones en el idioma del launcher
+  const mods = BUILTINS.map(m => ({ ...m, category: t(m.category), lunar: t(m.lunar) }))
+  return { mods, enabled, capes: { ...CAPES, category: t(CAPES.category), lunar: t(CAPES.lunar), enabled: s.capesByDefault !== false } }
 }
 
 // Lo que se instala por defecto en un perfil nuevo según los ajustes
@@ -87,7 +90,7 @@ async function apply (profile, slugs, onProgress = () => {}, { replace = false }
     } catch {
       skipped.push('ghost client')
     }
-    onProgress({ stage: `Instalando mods integrados (${++done}/${slugs.length})`, current: done, total: slugs.length })
+    onProgress({ stage: t('Instalando mods integrados ({x}/{length})', { x: ++done, length: slugs.length }), current: done, total: slugs.length })
   }
   await pool(slugs.filter(s => s !== 'ghost-client'), 4, async (slug) => {
     const name = [...BUILTINS, CAPES].find(b => b.slug === slug)?.name || slug
@@ -97,9 +100,9 @@ async function apply (profile, slugs, onProgress = () => {}, { replace = false }
     } catch {
       skipped.push(name)
     }
-    onProgress({ stage: `Instalando mods integrados (${++done}/${slugs.length})`, current: done, total: slugs.length })
+    onProgress({ stage: t('Instalando mods integrados ({x}/{length})', { x: ++done, length: slugs.length }), current: done, total: slugs.length })
   })
-  onProgress({ stage: 'Comprobando compatibilidad entre mods', current: 0, total: 0 })
+  onProgress({ stage: t('Comprobando compatibilidad entre mods'), current: 0, total: 0 })
   const check = await require('./resolver').resolve(profile, onProgress).catch(() => ({ changes: [] }))
   return { installed, skipped, adjusted: check.changes }
 }

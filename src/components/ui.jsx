@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { t, locale } from '../i18n.js'
 import { formatBytes, formatGB } from '../api.js'
 import { Icon } from './Icon.jsx'
 import { Medal, bestMedal } from './Medal.jsx'
@@ -14,7 +15,7 @@ export function Modal ({ title, onClose, children, footer, wide }) {
       <div className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-label={title}>
         <div className="modal-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Cerrar"><Icon name="x" /></button>
+          <button className="icon-btn" onClick={onClose} aria-label={t('Cerrar')}><Icon name="x" /></button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
@@ -56,17 +57,17 @@ export function RamSlider ({ value, onChange, totalRam }) {
     <div className="ram">
       <div className="ram-top">
         <strong>{formatGB(value)}</strong>
-        <small>de {formatGB(totalRam || 0)} en tu equipo</small>
+        <small>{t('de {total} en tu equipo', { total: formatGB(totalRam || 0) })}</small>
       </div>
       <input type="range" min={512} max={max} step={512} value={value}
-        style={{ '--pct': `${pct}%` }} onChange={e => onChange(Number(e.target.value))} aria-label="Memoria RAM" />
+        style={{ '--pct': `${pct}%` }} onChange={e => onChange(Number(e.target.value))} aria-label={t('Memoria RAM')} />
       <div className="ram-presets">
         {[2048, 4096, 6144, 8192].filter(v => v <= max).map(v => (
           <button key={v} className={`chip ${value === v ? 'active' : ''}`} onClick={() => onChange(v)}>{formatGB(v)}</button>
         ))}
       </div>
-      {tooMuch && <small className="warn"><Icon name="alert" size={14} /> Dejar poca RAM al sistema puede dar tirones. Con mods, 4–6 GB suele bastar.</small>}
-      {!tooMuch && value > 10240 && <small className="field-hint">Más de 10 GB rara vez mejora el rendimiento y puede causar pausas largas.</small>}
+      {tooMuch && <small className="warn"><Icon name="alert" size={14} /> {t('Dejar poca RAM al sistema puede dar tirones. Con mods, 4–6 GB suele bastar.')}</small>}
+      {!tooMuch && value > 10240 && <small className="field-hint">{t('Más de 10 GB rara vez mejora el rendimiento y puede causar pausas largas.')}</small>}
     </div>
   )
 }
@@ -119,7 +120,7 @@ export function ProfileBadge ({ profile, size = 44, src, showMedal = true }) {
       {badge}
       <span className="badge-medal">
         <Medal hours={medal.hours} size={Math.max(18, Math.round(size * 0.46))}
-          title={`Medalla de ${medal.hours} horas · conseguida el ${new Date(medal.at).toLocaleDateString('es-ES')}`} />
+          title={t('Medalla de {h} horas · conseguida el {date}', { h: medal.hours, date: new Date(medal.at).toLocaleDateString(locale()) })} />
       </span>
     </div>
   )

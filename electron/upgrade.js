@@ -11,6 +11,7 @@ const versions = require('./versions')
 const resolver = require('./resolver')
 const ghostclient = require('./ghostclient')
 const { copyEntries } = require('./copytree')
+const { t } = require('./i18n')
 
 // No se copian: los mods (se descargan de nuevo), cachés, registros y datos internos del launcher
 const SKIP = new Set(['mods', 'logs', 'crash-reports', '.fabric', '.cache', 'downloads', 'debug', '.mixin.out', 'natives',
@@ -33,11 +34,11 @@ function keepDisabled (profileId, projectId) {
 
 async function upgrade (sourceId, { version, name, copySaves } = {}, onProgress = () => {}) {
   const src = profiles.list().find(p => p.id === sourceId)
-  if (!src) throw new Error('No encuentro el perfil a actualizar')
-  if (!version) throw new Error('Elige la versión nueva')
-  if (version === src.version) throw new Error('El perfil ya está en esa versión')
+  if (!src) throw new Error(t('No encuentro el perfil a actualizar'))
+  if (!version) throw new Error(t('Elige la versión nueva'))
+  if (version === src.version) throw new Error(t('El perfil ya está en esa versión'))
   if (src.loader === 'fabric' && !(await versions.fabricGameVersions()).includes(version)) {
-    throw new Error(`Fabric todavía no está disponible para ${version}`)
+    throw new Error(t('Fabric todavía no está disponible para {version}', { version: version }))
   }
 
   const profile = profiles.create({
@@ -59,7 +60,7 @@ async function upgrade (sourceId, { version, name, copySaves } = {}, onProgress 
     const entries = fs.existsSync(from)
       ? fs.readdirSync(from).filter(e => !SKIP.has(e) && (copySaves || !HEAVY.has(e)))
       : []
-    await copyEntries(from, dest, entries, onProgress, 'Copiando ajustes y configuración')
+    await copyEntries(from, dest, entries, onProgress, t('Copiando ajustes y configuración'))
     if (src.hasIcon && fs.existsSync(path.join(from, '.ghost-icon.png'))) {
       fs.copyFileSync(path.join(from, '.ghost-icon.png'), path.join(dest, '.ghost-icon.png'))
       profiles.update(profile.id, { hasIcon: true })
@@ -94,15 +95,15 @@ async function upgrade (sourceId, { version, name, copySaves } = {}, onProgress 
       } catch {
         missing.push(it.title)
       }
-      onProgress({ stage: `Actualizando mods a ${version} (${++done}/${fromModrinth.length})`, current: done, total: fromModrinth.length })
+      onProgress({ stage: t('Actualizando mods a {version} ({x}/{length})', { version: version, x: ++done, length: fromModrinth.length }), current: done, total: fromModrinth.length })
     })
 
     // 3) Texturas y shaders copiados: se reconocen en Modrinth para ver su nombre e icono
-    onProgress({ stage: 'Reconociendo texturas y shaders', current: 0, total: 0 })
+    onProgress({ stage: t('Reconociendo texturas y shaders'), current: 0, total: 0 })
     await modrinth.identify(profile.id).catch(() => {})
 
     // 4) Compatibilidad entre los mods de la versión nueva
-    onProgress({ stage: 'Comprobando compatibilidad entre mods', current: 0, total: 0 })
+    onProgress({ stage: t('Comprobando compatibilidad entre mods'), current: 0, total: 0 })
     const check = await resolver.resolve(target, onProgress).catch(() => ({ changes: [] }))
 
     profiles.update(profile.id, { importing: false })

@@ -6,6 +6,7 @@ const auth = require('./auth')
 const java = require('./java')
 const versions = require('./versions')
 const profiles = require('./profiles')
+const { t } = require('./i18n')
 
 const running = new Map() // id de perfil -> proceso del juego
 const stopped = new Set() // perfiles que el usuario cerró desde el launcher
@@ -16,16 +17,17 @@ const LOADED = /Sound engine started|Created: \d+x\d+x\d+ minecraft:textures\/at
 // Divide los argumentos de Java respetando comillas
 const splitArgs = (s) => (s.match(/"[^"]*"|\S+/g) || []).map(a => a.replace(/^"|"$/g, ''))
 
-async function launch (profileId, emit, { retry = 0 } = {}) {
-  if (running.has(profileId)) throw new Error('Este perfil ya está abierto')
+// server: entrar directamente en ese servidor al abrir el juego (unirse a un amigo)
+async function launch (profileId, emit, { retry = 0, server = null } = {}) {
+  if (running.has(profileId)) throw new Error(t('Este perfil ya está abierto'))
   const profile = profiles.list().find(p => p.id === profileId)
-  if (!profile) throw new Error('Perfil no encontrado')
+  if (!profile) throw new Error(t('Perfil no encontrado'))
   const { settings } = store.get()
 
-  emit('progress', { stage: 'Iniciando sesión', current: 0, total: 0 })
+  emit('progress', { stage: t('Iniciando sesión'), current: 0, total: 0 })
   const authorization = await auth.authorization()
 
-  emit('progress', { stage: 'Preparando versión', current: 0, total: 0 })
+  emit('progress', { stage: t('Preparando versión'), current: 0, total: 0 })
   const major = await versions.requiredJava(profile.version)
   const javaPath = await java.ensureJava(major, p => emit('progress', p))
 
@@ -43,6 +45,9 @@ async function launch (profileId, emit, { retry = 0 } = {}) {
   const gameDir = paths.instance(profile.id)
   fs.mkdirSync(gameDir, { recursive: true })
 
+  // El juego (Minecraft, ghost client y los mods integrados) en el idioma del launcher
+  try { require('./options').setLanguage(profile.id, require('./i18n').minecraftLang()) } catch (e) { emit('log', `[Ghost Launcher] ${e.message}\n`) }
+
   const options = {
     authorization,
     root: paths.root(),
@@ -54,17 +59,20 @@ async function launch (profileId, emit, { retry = 0 } = {}) {
       // ghost client usa la aplicación de Discord "ghost client" del usuario para el estado de Discord
       ...(/^\d{15,22}$/.test(settings.discordAppId || '') ? [`-Dghostclient.discordAppId=${settings.discordAppId}`] : []),
       // Pantalla de carga de ghost client: animación del launcher, la personalizada del usuario o la clásica
-      ...require('./loadingscreen').jvmArgs(settings)
+      ...require('./loadingscreen').jvmArgs(settings),
+      // Servidor de ghost client (amigos, chat y cosméticos)
+      `-Dghostclient.server=${require('./ghostserver').SERVER}`
     ],
     overrides: { gameDirectory: gameDir, cwd: gameDir, maxSockets: 16 }
   }
   if (profile.resolution) options.window = profile.resolution
+  if (server) options.quickPlay = { type: 'multiplayer', identifier: server }
 
   const client = new Client()
   client.on('progress', e => emit('progress', { stage: stageName(e.type), current: e.task, total: e.total }))
   client.on('download-status', e => {
     if (e.type === 'version-jar' || e.type === 'assets') return
-    emit('progress', { stage: `Descargando ${e.name}`, current: e.current, total: e.total })
+    emit('progress', { stage: t('Descargando {name}', { name: e.name }), current: e.current, total: e.total })
   })
   client.on('debug', line => emit('log', line))
   let loaded = false
@@ -74,9 +82,9 @@ async function launch (profileId, emit, { retry = 0 } = {}) {
     emit('log', line)
   })
 
-  emit('progress', { stage: 'Descargando archivos del juego', current: 0, total: 0 })
+  emit('progress', { stage: t('Descargando archivos del juego'), current: 0, total: 0 })
   const proc = await client.launch(options)
-  if (!proc) throw new Error('No se pudo iniciar el juego. Mira la consola para más detalles.')
+  if (!proc) throw new Error(t('No se pudo iniciar el juego. Mira la consola para más detalles.'))
 
   running.set(profileId, proc)
   profiles.update(profile.id, { lastPlayed: Date.now() })
@@ -101,7 +109,7 @@ async function launch (profileId, emit, { retry = 0 } = {}) {
     // Java a veces se cae al cargar en algunos PCs (overlays, drivers...). Se reintenta una vez solo.
     if (code !== 0 && !loaded && !byUser && retry < 1 && Date.now() - startedAt < 5 * 60 * 1000) {
       emit('log', '\n[Ghost Launcher] El juego se cerró mientras cargaba. Volviendo a intentarlo...\n\n')
-      launch(profileId, emit, { retry: retry + 1 }).catch(e => {
+      launch(profileId, emit, { retry: retry + 1, server }).catch(e => {
         emit('log', `[Ghost Launcher] ${e.message}\n`)
         emit('closed', { profileId, code })
       })
@@ -122,14 +130,15 @@ function addPlayTime (profileId, session) {
 }
 
 function stageName (type) {
-  return {
+  const name = {
     assets: 'Descargando assets',
     'assets-copy': 'Copiando assets',
     natives: 'Preparando librerías nativas',
     classes: 'Descargando librerías',
     'classes-custom': 'Descargando librerías de Fabric',
     'classes-maven-custom': 'Descargando librerías de Fabric'
-  }[type] || `Preparando (${type})`
+  }[type]
+  return name ? t(name) : t('Preparando ({type})', { type })
 }
 
 function stop (profileId) {

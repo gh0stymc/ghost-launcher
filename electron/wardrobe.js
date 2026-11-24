@@ -5,6 +5,7 @@ const path = require('path')
 const crypto = require('crypto')
 const paths = require('./paths')
 const auth = require('./auth')
+const { t } = require('./i18n')
 
 const API = 'https://api.minecraftservices.com/minecraft/profile'
 const dir = () => paths.data('wardrobe')
@@ -22,10 +23,10 @@ const dataUrl = (file) => 'data:image/png;base64,' + fs.readFileSync(file).toStr
 
 // Una skin válida es un PNG de 64x64 (o 64x32, el formato antiguo)
 function checkPng (buf) {
-  if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47) throw new Error('La skin tiene que ser una imagen PNG')
+  if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47) throw new Error(t('La skin tiene que ser una imagen PNG'))
   const w = buf.readUInt32BE(16)
   const h = buf.readUInt32BE(20)
-  if (w !== 64 || (h !== 64 && h !== 32)) throw new Error(`La skin tiene que medir 64x64 píxeles (esta mide ${w}x${h})`)
+  if (w !== 64 || (h !== 64 && h !== 32)) throw new Error(t('La skin tiene que medir 64x64 píxeles (esta mide {w}x{h})', { w: w, h: h }))
 }
 
 // Detecta si una skin es de brazos finos (Alex): el píxel del hombro derecho (54,20) es transparente
@@ -63,7 +64,7 @@ function addBuffer (buf, name, variant, source = null) {
 
 async function download (url) {
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`No se pudo descargar la skin (${res.status})`)
+  if (!res.ok) throw new Error(t('No se pudo descargar la skin ({status})', { status: res.status }))
   return Buffer.from(await res.arrayBuffer())
 }
 
@@ -74,8 +75,8 @@ async function api (method, url, body, headers = {}) {
   let json = null
   try { json = text ? JSON.parse(text) : null } catch {}
   if (!res.ok) {
-    if (res.status === 429) throw new Error('Mojang dice que has cambiado de skin demasiadas veces seguidas. Espera un minuto.')
-    if (res.status === 401) throw new Error('La sesión ha caducado. Vuelve a iniciar sesión.')
+    if (res.status === 429) throw new Error(t('Mojang dice que has cambiado de skin demasiadas veces seguidas. Espera un minuto.'))
+    if (res.status === 401) throw new Error(t('La sesión ha caducado. Vuelve a iniciar sesión.'))
     throw new Error(json?.errorMessage || json?.error || `Mojang respondió ${res.status}`)
   }
   return json
@@ -101,15 +102,15 @@ function addFile (file, name) {
 // Copia la skin de cualquier jugador por su nombre
 async function addFromPlayer (username) {
   const name = String(username || '').trim()
-  if (!/^\w{2,16}$/.test(name)) throw new Error('Escribe un nombre de jugador válido')
+  if (!/^\w{2,16}$/.test(name)) throw new Error(t('Escribe un nombre de jugador válido'))
   const res = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(name)}`)
-  if (res.status === 404 || res.status === 204) throw new Error(`No existe ningún jugador llamado ${name}`)
-  if (!res.ok) throw new Error(`No se pudo buscar a ${name} (${res.status})`)
+  if (res.status === 404 || res.status === 204) throw new Error(t('No existe ningún jugador llamado {name}', { name: name }))
+  if (!res.ok) throw new Error(t('No se pudo buscar a {name} ({status})', { name: name, status: res.status }))
   const { id, name: realName } = await res.json()
   const prof = await (await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${id}`)).json()
   const textures = JSON.parse(Buffer.from(prof.properties.find(p => p.name === 'textures').value, 'base64').toString())
   const skin = textures.textures?.SKIN
-  if (!skin) throw new Error(`${realName} usa la skin por defecto`)
+  if (!skin) throw new Error(t('{realName} usa la skin por defecto', { realName: realName }))
   return addBuffer(await download(skin.url), realName, skin.metadata?.model === 'slim' ? 'slim' : 'classic', realName)
 }
 
@@ -131,7 +132,7 @@ async function capeImage (url) {
 // Guarda en el vestidor la skin que llevas puesta
 async function addCurrent () {
   const acc = await account()
-  if (!acc.skin) throw new Error('Tu cuenta usa una skin por defecto')
+  if (!acc.skin) throw new Error(t('Tu cuenta usa una skin por defecto'))
   const skin = addBuffer(await download(acc.skin.url), `${acc.name} (actual)`, acc.skin.variant)
   const idx = readIndex()
   idx.active = skin.id
@@ -142,7 +143,7 @@ async function addCurrent () {
 function update (id, changes) {
   const idx = readIndex()
   const skin = idx.skins.find(s => s.id === id)
-  if (!skin) throw new Error('Esa skin ya no está en el vestidor')
+  if (!skin) throw new Error(t('Esa skin ya no está en el vestidor'))
   if (changes.name !== undefined) skin.name = String(changes.name).trim().slice(0, 40) || skin.name
   if (changes.variant === 'slim' || changes.variant === 'classic') skin.variant = changes.variant
   if (changes.cape !== undefined) skin.cape = changes.cape || null
@@ -163,7 +164,7 @@ function remove (id) {
 async function apply (id) {
   const idx = readIndex()
   const skin = idx.skins.find(s => s.id === id)
-  if (!skin) throw new Error('Esa skin ya no está en el vestidor')
+  if (!skin) throw new Error(t('Esa skin ya no está en el vestidor'))
   const form = new FormData()
   form.append('variant', skin.variant)
   form.append('file', new Blob([fs.readFileSync(path.join(dir(), id + '.png'))], { type: 'image/png' }), 'skin.png')

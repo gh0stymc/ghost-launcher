@@ -3,6 +3,13 @@ const os = require('os')
 const crypto = require('crypto')
 const paths = require('./paths')
 
+function systemLanguage () {
+  let locale = ''
+  try { locale = require('electron').app.getSystemLocale() } catch {}
+  if (!locale) locale = Intl.DateTimeFormat().resolvedOptions().locale || ''
+  return /^es/i.test(locale) ? 'es' : 'en'
+}
+
 const defaults = () => ({
   settings: {
     // RAM por defecto: 4 GB, o la mitad del equipo si tiene poca memoria
@@ -14,7 +21,9 @@ const defaults = () => ({
     accent: '#7c5cff',
     background: 'aurora',
     discordAppId: '',
-    loadingScreen: 'ghost'
+    loadingScreen: 'ghost',
+    // Idioma del launcher y del juego: 'es' o 'en' (la primera vez, el del sistema)
+    language: systemLanguage()
   },
   profiles: [],
   accounts: [],

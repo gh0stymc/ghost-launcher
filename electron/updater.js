@@ -1,5 +1,5 @@
 // Actualizaciones automáticas del launcher (y con él, de ghost client, que va dentro).
-// Busca versiones nuevas en las "Releases" de GitHub, las descarga en segundo plano y se instalan al cerrar
+// Busca versiones nuevas en el servidor de ghost client (R2 de Cloudflare, ghost-server /updates), las descarga en segundo plano y se instalan al cerrar
 // el launcher, o al pulsar "Reiniciar y actualizar".
 const { app } = require('electron')
 

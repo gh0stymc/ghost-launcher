@@ -3,6 +3,7 @@ const path = require('path')
 const { nativeImage } = require('electron')
 const store = require('./store')
 const paths = require('./paths')
+const { t } = require('./i18n')
 
 const COLORS = ['#7c5cff', '#22c55e', '#f97316', '#06b6d4', '#ec4899', '#eab308']
 const iconFile = (id) => path.join(paths.instance(id), '.ghost-icon.png')
@@ -64,7 +65,7 @@ function remove (id, deleteFiles) {
 
 // Convierte cualquier imagen (archivo o bytes) en un cuadrado de 256 px
 function toSquarePng (image) {
-  if (image.isEmpty()) throw new Error('No se pudo leer la imagen (usa PNG o JPG)')
+  if (image.isEmpty()) throw new Error(t('No se pudo leer la imagen (usa PNG o JPG)'))
   const { width, height } = image.getSize()
   const side = Math.min(width, height)
   const cropped = image.crop({ x: Math.floor((width - side) / 2), y: Math.floor((height - side) / 2), width: side, height: side })
@@ -77,7 +78,7 @@ function preview (file) {
 
 // source: ruta de archivo, Buffer, o null para quitar la foto
 function setIcon (id, source) {
-  if (!raw(id)) throw new Error('Perfil no encontrado')
+  if (!raw(id)) throw new Error(t('Perfil no encontrado'))
   if (!source) {
     fs.rmSync(iconFile(id), { force: true })
     update(id, { hasIcon: false })

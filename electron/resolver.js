@@ -8,6 +8,7 @@ const AdmZip = require('adm-zip')
 const paths = require('./paths')
 const modrinth = require('./modrinth')
 const { getJson } = require('./http')
+const { t } = require('./i18n')
 
 const API = 'https://api.modrinth.com/v2'
 
@@ -159,7 +160,7 @@ async function resolve (profile, onProgress = () => {}) {
   for (let round = 0; round < 25; round++) {
     const issues = problems(profile)
     if (!issues.length) return { ok: true, changes }
-    onProgress({ stage: 'Ajustando versiones de mods incompatibles', current: round, total: 0 })
+    onProgress({ stage: t('Ajustando versiones de mods incompatibles'), current: round, total: 0 })
 
     const meta = modrinth.readMeta(profile.id)
     // Arreglamos primero los que fallan con Minecraft: así los demás se ajustan a ellos
