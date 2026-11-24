@@ -1,8 +1,6 @@
 # Ghost Launcher
 
-Hola 👋 soy gh0stymc. Llevo un montón de horas jugando PvP en Minecraft, y como a muchos, lo que me gustaba de
-Lunar Client era tenerlo todo en un sitio: HUD, cosméticos, skins, rendimiento... pero siempre me faltaba poder
-hacerlo a mi manera, sin paywalls y en condiciones. Así que en vez de seguir quejándome, me puse a hacer el mío.
+Yoow que pasa. Estaba un poco aburrido del Lunar y Modrinth y decidí hacer un launcher propio con mi estilo y las cosas que me gustaban de ambos launchers
 
 **Ghost Launcher** es eso: un launcher de Minecraft gratuito (Electron + React) con su propio cliente PvP,
 [ghost client](https://github.com/gh0stymc/ghost-client). La idea es sencilla — lo mejor de un launcher tipo Lunar,
