@@ -33,7 +33,7 @@ Se actualiza solo en segundo plano.
 - **Vestidor**: guarda tus skins y cambia entre ellas; se cambian en tu cuenta oficial, así que se ven en todos
   los servidores. También capas y copiar la skin de cualquier jugador.
 - **Tiempo de juego y medallas**: horas por perfil y versión, medallas a las 500, 750, 1000, 2500 y 5000 horas.
-- **Actualizaciones automáticas**: se descargan solas en segundo plano desde el servidor de Ghost (Cloudflare).
+- **Actualizaciones automáticas**: se descargan solas en segundo plano desde las Releases de GitHub.
 - **Personalización**: foto por perfil, color principal (el texto se adapta para que siempre se lea), fondo, ocultar el launcher al jugar.
 
 ## Uso
@@ -83,9 +83,9 @@ npm run dist       # crea el instalador en release/
 2. Sube el número de versión en `package.json`.
 3. Windows: `npx electron-builder --win --publish never`. Linux (desde Ubuntu): `npx electron-builder --linux`
    (AppImage, tar.gz, pacman para CachyOS/Arch y deb para Ubuntu).
-4. Sube el instalador y los `.yml` al servidor con `node tools/upload-release.js` (van a Cloudflare R2, servidos
-   por el Worker de [ghost-server](https://ghost-server.gh0styclient.workers.dev)). Deja solo la última versión en
-   el bucket. Los launchers instalados la descargan solos. Los binarios **no** se suben a este repositorio.
+4. Crea la release en GitHub con el instalador, su `.blockmap` y `latest.yml`
+   (`gh release create vX --repo gh0stymc/ghost-launcher ...`). Los launchers instalados la descargan solos.
+   Los binarios viven como *assets* de la release, no en el árbol del repositorio.
 
 ## Licencia
 

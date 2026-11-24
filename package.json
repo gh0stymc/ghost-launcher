@@ -119,8 +119,9 @@
     },
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://ghost-server.gh0styclient.workers.dev/updates"
+        "provider": "github",
+        "owner": "gh0stymc",
+        "repo": "ghost-launcher"
       }
     ],
     "deb": {
